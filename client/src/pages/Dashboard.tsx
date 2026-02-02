@@ -35,6 +35,11 @@ export default function Dashboard() {
 
   const { data: analytics, isLoading } = useAnalytics({ startDate, endDate });
 
+  const handleExport = () => {
+    const params = new URLSearchParams({ startDate, endDate });
+    window.open(`/api/export?${params.toString()}`, '_blank');
+  };
+
   if (isProfileLoading || isLoading) {
     return (
       <Layout>
@@ -55,9 +60,9 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold text-slate-900">Clinic Analytics</h1>
             <p className="text-slate-500 mt-1">Performance overview for the last 30 days</p>
           </div>
-          <Button variant="outline" className="gap-2" onClick={() => window.print()}>
+          <Button variant="outline" className="gap-2" onClick={handleExport}>
             <Download className="h-4 w-4" />
-            Export Report
+            Export CSV
           </Button>
         </div>
 
@@ -118,14 +123,26 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis 
                       dataKey="date" 
-                      tickFormatter={(value) => format(new Date(value), "MMM d")}
+                      tickFormatter={(value) => {
+                        try {
+                          return format(new Date(value), "MMM d");
+                        } catch (e) {
+                          return value;
+                        }
+                      }}
                       stroke="#94a3b8"
                       fontSize={12}
                     />
                     <YAxis stroke="#94a3b8" fontSize={12} />
                     <Tooltip 
                       contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}
-                      labelFormatter={(value) => format(new Date(value), "MMM d, yyyy")}
+                      labelFormatter={(value) => {
+                        try {
+                          return format(new Date(value), "MMM d, yyyy");
+                        } catch (e) {
+                          return value;
+                        }
+                      }}
                     />
                     <Area 
                       type="monotone" 

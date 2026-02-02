@@ -118,7 +118,13 @@ export default function LiveBoard() {
                       onClick={() => handleRowClick(visit)}
                     >
                       <TableCell className="font-mono text-slate-500">
-                        {visit.arrivalTime ? format(new Date(visit.arrivalTime), "HH:mm") : "--:--"}
+                        {visit.arrivalTime ? (function() {
+                          try {
+                            return format(new Date(visit.arrivalTime), "HH:mm");
+                          } catch (e) {
+                            return "--:--";
+                          }
+                        })() : "--:--"}
                       </TableCell>
                       <TableCell className="font-medium text-slate-900">
                         {visit.patientName}

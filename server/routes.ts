@@ -8,7 +8,7 @@ import { z } from "zod";
 import { format } from "date-fns";
 import { db } from "./db";
 import { visits, profiles, users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -19,16 +19,11 @@ export async function registerRoutes(
   registerAuthRoutes(app);
 
   // === SEED DATA ===
-  // Create initial profiles for users if they don't exist
-  // This is a simple hook to ensure roles are assigned.
-  // In a real app, this would be an admin UI.
-  // Here, we'll make the first user a 'doctor' and subsequent ones 'assistant' if no profile exists.
   app.use(async (req: any, res, next) => {
     if (req.isAuthenticated() && req.user?.claims?.sub) {
       const userId = req.user.claims.sub;
       const existingProfile = await storage.getProfile(userId);
       if (!existingProfile) {
-        // Check if any profiles exist
         const allProfiles = await db.select().from(profiles);
         const role = allProfiles.length === 0 ? "doctor" : "assistant";
         await storage.createProfile({ userId, role });
@@ -55,28 +50,26 @@ export async function registerRoutes(
 
   // === API ROUTES ===
 
-  // Get current user extended info
   app.get(api.auth.me.path, isAuthenticated, async (req: any, res) => {
     const userId = req.user.claims.sub;
     const profile = await storage.getProfile(userId);
     res.json({
       user: req.user,
-      role: profile?.role || "assistant", // Default to assistant if no profile yet
+      role: profile?.role || "assistant",
     });
   });
 
-  // Visits
   app.get(api.visits.list.path, isAuthenticated, async (req, res) => {
     const { date: queryDate, range, startDate, endDate } = req.query;
     let filters: any = {};
     
-    if (range === 'today' || !range && !queryDate && !startDate) {
+    if (range === 'today' || (!range && !queryDate && !startDate)) {
       filters.date = format(new Date(), 'yyyy-MM-dd');
     } else if (queryDate) {
       filters.date = String(queryDate);
     } else if (startDate && endDate) {
-      filters.startDate = String(startDate);
-      filters.endDate = String(endDate);
+      filters.startDate = format(new Date(String(startDate)), 'yyyy-MM-dd');
+      filters.endDate = format(new Date(String(endDate)), 'yyyy-MM-dd');
     }
 
     const result = await storage.getVisits(filters);
@@ -111,8 +104,6 @@ export async function registerRoutes(
       const userId = req.user.claims.sub;
       
       const input = api.visits.update.input.parse(req.body);
-      
-      // Update lastUpdatedBy
       const updateData = { ...input, lastUpdatedBy: userId };
       
       const visit = await storage.updateVisit(id, updateData);
@@ -136,7 +127,6 @@ export async function registerRoutes(
     res.status(204).send();
   });
 
-  // Analytics
   app.get(api.analytics.get.path, isAuthenticated, async (req: any, res) => {
     const userId = req.user.claims.sub;
     const profile = await storage.getProfile(userId);
@@ -150,14 +140,44 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Start and End date required" });
     }
 
-    const stats = await storage.getAnalytics(String(startDate), String(endDate));
+    const formattedStart = format(new Date(String(startDate)), 'yyyy-MM-dd');
+    const formattedEnd = format(new Date(String(endDate)), 'yyyy-MM-dd');
+
+    const stats = await storage.getAnalytics(formattedStart, formattedEnd);
     res.json(stats);
   });
 
-  // Seed Data (if empty)
+  // Export CSV
+  app.get("/api/export", isAuthenticated, async (req: any, res) => {
+    const userId = req.user.claims.sub;
+    const profile = await storage.getProfile(userId);
+    
+    if (profile?.role !== 'doctor') {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) {
+      return res.status(400).json({ message: "Start and End date required" });
+    }
+
+    const formattedStart = format(new Date(String(startDate)), 'yyyy-MM-dd');
+    const formattedEnd = format(new Date(String(endDate)), 'yyyy-MM-dd');
+
+    const data = await storage.getVisits({ startDate: formattedStart, endDate: formattedEnd });
+    
+    let csv = "Patient Name,Arrival Time,Condition,Status,Price,Next Step,Date\n";
+    data.forEach(v => {
+      csv += `"${v.patientName}","${v.arrivalTime}","${v.condition}","${v.status}","${v.price || 0}","${v.nextStep || ""}","${v.visitDate}"\n`;
+    });
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=clinic-export-${formattedStart}-to-${formattedEnd}.csv`);
+    res.send(csv);
+  });
+
   const existingVisits = await storage.getVisits({ date: format(new Date(), 'yyyy-MM-dd') });
   if (existingVisits.length === 0) {
-    console.log("Seeding today's visits...");
     const today = format(new Date(), 'yyyy-MM-dd');
     await storage.createVisit({
       patientName: "John Doe",
