@@ -1,0 +1,284 @@
+Application Overview
+
+The application is a web-based internal clinic platform designed to streamline coordination between a doctor and their assistant during daily consultations. The platform replaces verbal back-and-forth with a shared real-time operational interface, allowing both parties to work simultaneously without page refreshes.
+
+The application is not patient-facing. Only authenticated clinic staff (doctor and assistant) can access it. The system focuses on live patient flow management, price and next-step communication, basic analytics, and data export.
+
+User Roles and Access Control
+
+The platform supports two user roles:
+
+Doctor (Owner Role)
+
+Has full access to all features
+
+Can view and edit all patient visit data
+
+Can enter and modify prices and next steps
+
+Can access dashboards and analytics
+
+Can export data
+
+Can see which user (doctor or assistant) performed each action
+
+Assistant (Staff Role)
+
+Can add new patient visits
+
+Can edit non-sensitive fields (name, condition, status)
+
+Can view prices and next steps entered by the doctor
+
+Cannot access analytics or export features
+
+Cannot delete historical data
+
+Each user has a separate account. All write actions are associated with a user ID so the system can track who entered or modified each piece of information.
+
+Core Concept: Shared Live Board
+
+The heart of the application is a shared live board represented as a table. This table is visible simultaneously to the doctor and the assistant and updates in real time.
+
+Any change made by one user appears instantly on the other user’s screen without requiring a refresh.
+
+The board represents patient visits for the current working day.
+
+Real-Time Patient Visit Table
+Table Purpose
+
+The table acts as a live operational queue that reflects:
+
+Who is currently waiting
+
+Who is being consulted
+
+What actions and prices were decided by the doctor
+
+What information the assistant should communicate to the patient
+
+Table Behavior
+
+Rows are ordered by arrival time by default
+
+Updates propagate instantly to all connected users
+
+Cells are editable inline, depending on user role
+
+Status changes update immediately for all users
+
+Table Columns
+Patient Name
+
+Entered by the assistant
+
+Free text
+
+Appears in real time as soon as the assistant completes input
+
+Arrival Time
+
+Automatically generated when the patient is added
+
+Cannot be edited manually
+
+Used for analytics and time-based filtering
+
+Condition / Reason for Visit
+
+Entered by the assistant
+
+Free text or short predefined list
+
+Intended for operational context, not medical diagnosis
+
+Status
+
+Represents the current state of the patient visit.
+Allowed values:
+
+Waiting
+
+In consultation
+
+Done
+
+Left
+
+Both doctor and assistant can update the status.
+
+Price
+
+Entered only by the doctor
+
+Numeric field
+
+Visible to the assistant but not editable by them
+
+Used for analytics and exports
+
+Next Step
+
+Entered only by the doctor
+
+Free text
+
+Describes what the assistant should tell the patient (exam, scan, treatment, follow-up, etc.)
+
+Last Updated By
+
+Automatically populated by the system
+
+Indicates whether the last modification was made by the doctor or the assistant
+
+Daily Workflow
+
+The assistant logs in and starts the working day.
+
+Each arriving patient is added to the live table.
+
+The doctor sees patients appear in real time as they are added.
+
+When the doctor consults a patient, they update:
+
+Status
+
+Price
+
+Next step
+
+The assistant sees these updates instantly and communicates them to the patient.
+
+At the end of the day, all visits are stored as historical data and become available for analytics and export.
+
+Dashboard and Analytics
+
+The dashboard is accessible only to the doctor.
+
+It provides aggregated insights based on patient visit data and supports time-based filtering.
+
+Time Filters
+
+The dashboard allows the doctor to select:
+
+A single day
+
+A custom date range
+
+A predefined range (today, last 7 days, last 30 days, current month)
+
+All dashboard metrics update dynamically based on the selected time range.
+
+Metrics Displayed
+Total Patients
+
+Number of patient visits in the selected time range
+
+Total Revenue
+
+Sum of all prices entered for visits in the selected range
+
+Average Price
+
+Average price per patient for the selected range
+
+Patients Per Day
+
+Aggregated daily count of patients
+
+Used to identify busy and slow days
+
+These metrics are read-only and derived entirely from visit data.
+
+Data Export
+
+The platform allows the doctor to export visit data for record keeping and analysis.
+
+Export Options
+Single Day Export
+
+Exports all visits for a selected day
+
+Generates one Excel file
+
+Date Range Export
+
+Exports visits across a selected date range
+
+Generates one Excel file with:
+
+One sheet per day
+
+Each sheet containing that day’s visits
+
+Exported Fields
+
+Each exported record includes:
+
+Patient name
+
+Arrival time
+
+Condition
+
+Status
+
+Price
+
+Next step
+
+Created by
+
+Last updated by
+
+Date of visit
+
+Exports are generated on demand.
+
+Data Model Philosophy
+
+The system is visit-based, not patient-profile-based.
+
+Each row represents a single visit, even if the same patient comes multiple times on different days. This aligns with real clinic operations and simplifies MVP implementation.
+
+No long-term patient medical history is stored in the MVP.
+
+Real-Time System Requirements
+
+All table updates must propagate instantly to all connected users
+
+No manual refresh or reload should ever be required
+
+Concurrent edits must resolve gracefully
+
+The system must remain responsive with multiple users connected simultaneously
+
+Non-Goals for MVP
+
+The MVP explicitly excludes:
+
+Appointment scheduling
+
+Patient self-service access
+
+Payments or invoicing
+
+Medical file uploads
+
+Insurance handling
+
+Multi-clinic or multi-doctor management
+
+These features are intentionally postponed to keep the system simple, fast to build, and easy to validate.
+
+Summary
+
+This application is a real-time internal coordination tool for clinics. Its primary value lies in replacing verbal coordination with a shared live interface that:
+
+Improves operational clarity
+
+Respects local clinic workflows
+
+Requires minimal training
+
+Can be built and iterated quickly as an MVP
