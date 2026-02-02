@@ -1,0 +1,73 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, buildUrl, type InsertVisit, type Visit } from "@shared/routes";
+
+export function useVisits(params?: { date?: string }) {
+  const queryParams = params ? `?date=${params.date}` : "";
+  
+  return useQuery({
+    queryKey: [api.visits.list.path, params?.date],
+    queryFn: async () => {
+      const url = api.visits.list.path + queryParams;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch visits");
+      return api.visits.list.responses[200].parse(await res.json());
+    },
+  });
+}
+
+export function useCreateVisit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (data: InsertVisit) => {
+      const res = await fetch(api.visits.create.path, {
+        method: api.visits.create.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      if (!res.ok) {
+        if (res.status === 400) {
+          const error = await res.json();
+          throw new Error(error.message || "Validation failed");
+        }
+        throw new Error("Failed to create visit");
+      }
+      return api.visits.create.responses[201].parse(await res.json());
+    },
+    // We invalidate queries, but we also rely on WebSocket for instant updates
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.visits.list.path] }),
+  });
+}
+
+export function useUpdateVisit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: number } & Partial<InsertVisit>) => {
+      const url = buildUrl(api.visits.update.path, { id });
+      const res = await fetch(url, {
+        method: api.visits.update.method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to update visit");
+      return api.visits.update.responses[200].parse(await res.json());
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.visits.list.path] }),
+  });
+}
+
+export function useDeleteVisit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const url = buildUrl(api.visits.delete.path, { id });
+      const res = await fetch(url, {
+        method: api.visits.delete.method,
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete visit");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.visits.list.path] }),
+  });
+}

@@ -1,0 +1,21 @@
+import { cn } from "@/lib/utils";
+
+const statusConfig = {
+  waiting: { label: "Waiting", className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+  in_consultation: { label: "In Consultation", className: "bg-blue-100 text-blue-800 border-blue-200" },
+  done: { label: "Done", className: "bg-green-100 text-green-800 border-green-200" },
+  left: { label: "Left", className: "bg-gray-100 text-gray-800 border-gray-200" },
+};
+
+export function StatusBadge({ status }: { status: string }) {
+  const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.waiting;
+  
+  return (
+    <span className={cn(
+      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+      config.className
+    )}>
+      {config.label}
+    </span>
+  );
+}
