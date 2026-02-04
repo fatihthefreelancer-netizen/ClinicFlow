@@ -35,19 +35,13 @@ export default function Dashboard() {
 
   const { data: analytics, isLoading, error } = useAnalytics({ startDate, endDate });
 
-  const handleExport = () => {
-    const params = new URLSearchParams({ 
-      startDate: new Date(startDate).toISOString(), 
-      endDate: new Date(endDate).toISOString() 
-    });
-    window.location.href = `/api/export?${params.toString()}`;
-  };
+  console.log("Dashboard state raw:", { isLoading, error, analytics });
 
   if (error) {
     return (
       <Layout>
         <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] gap-4">
-          <p className="text-red-500 font-medium">Failed to load analytics</p>
+          <p className="text-red-500 font-medium">Failed to load analytics: {error.message}</p>
           <Button onClick={() => window.location.reload()}>Retry</Button>
         </div>
       </Layout>
@@ -58,13 +52,36 @@ export default function Dashboard() {
     return (
       <Layout>
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-slate-500">Analyzing clinic data...</p>
+          </div>
         </div>
       </Layout>
     );
   }
 
   if (role !== "doctor") return null;
+
+  const stats = analytics || {
+    totalPatients: 0,
+    totalRevenue: 0,
+    averagePrice: 0,
+    patientsPerDay: []
+  };
+
+  const chartData = (stats.patientsPerDay || []).map(d => ({
+    ...d,
+    date: d.date ? new Date(d.date).getTime() : 0
+  })).filter(d => d.date > 0);
+
+  const handleExport = () => {
+    const params = new URLSearchParams({ 
+      startDate: new Date(startDate).toISOString(), 
+      endDate: new Date(endDate).toISOString() 
+    });
+    window.location.href = `/api/export?${params.toString()}`;
+  };
 
   return (
     <Layout>
@@ -87,7 +104,7 @@ export default function Dashboard() {
               <Users className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-slate-900">{analytics?.totalPatients}</div>
+              <div className="text-2xl font-bold text-slate-900">{stats.totalPatients}</div>
               <p className="text-xs text-slate-400 mt-1">Last 30 days</p>
             </CardContent>
           </Card>
@@ -99,7 +116,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">
-                ${analytics?.totalRevenue ? (analytics.totalRevenue / 100).toFixed(2) : "0.00"}
+                ${stats.totalRevenue ? (stats.totalRevenue / 100).toFixed(2) : "0.00"}
               </div>
               <p className="text-xs text-slate-400 mt-1">Total accumulated</p>
             </CardContent>
@@ -112,7 +129,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">
-                ${analytics?.averagePrice ? (analytics.averagePrice / 100).toFixed(2) : "0.00"}
+                ${stats.averagePrice ? (stats.averagePrice / 100).toFixed(2) : "0.00"}
               </div>
               <p className="text-xs text-slate-400 mt-1">Per patient</p>
             </CardContent>
@@ -127,7 +144,7 @@ export default function Dashboard() {
             <CardContent>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analytics?.patientsPerDay}>
+                  <AreaChart data={chartData}>
                     <defs>
                       <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
@@ -137,11 +154,13 @@ export default function Dashboard() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis 
                       dataKey="date" 
+                      type="number"
+                      domain={['auto', 'auto']}
                       tickFormatter={(value) => {
                         try {
                           return format(new Date(value), "MMM d");
                         } catch (e) {
-                          return value;
+                          return "";
                         }
                       }}
                       stroke="#94a3b8"
@@ -154,7 +173,7 @@ export default function Dashboard() {
                         try {
                           return format(new Date(value), "MMM d, yyyy");
                         } catch (e) {
-                          return value;
+                          return "";
                         }
                       }}
                     />

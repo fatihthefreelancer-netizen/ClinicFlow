@@ -87,46 +87,51 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAnalytics(startDate: string, endDate: string) {
-    const result = await db
-      .select({
-        count: sql<number>`count(*)`,
-        revenue: sql<number>`sum(${visits.price})`,
-        avgPrice: sql<number>`avg(${visits.price})`,
-      })
-      .from(visits)
-      .where(
-        and(
-          gte(visits.visitDate, startDate),
-          lte(visits.visitDate, endDate)
+    try {
+      const result = await db
+        .select({
+          count: sql<number>`count(*)`,
+          revenue: sql<number>`sum(${visits.price})`,
+          avgPrice: sql<number>`avg(${visits.price})`,
+        })
+        .from(visits)
+        .where(
+          and(
+            gte(visits.visitDate, startDate),
+            lte(visits.visitDate, endDate)
+          )
+        );
+
+      const stats = result[0] || { count: 0, revenue: 0, avgPrice: 0 };
+
+      const dailyStats = await db
+        .select({
+          date: visits.visitDate,
+          count: sql<number>`count(*)`,
+        })
+        .from(visits)
+        .where(
+          and(
+            gte(visits.visitDate, startDate),
+            lte(visits.visitDate, endDate)
+          )
         )
-      );
+        .groupBy(visits.visitDate)
+        .orderBy(visits.visitDate);
 
-    const stats = result[0];
-
-    const dailyStats = await db
-      .select({
-        date: visits.visitDate,
-        count: sql<number>`count(*)`,
-      })
-      .from(visits)
-      .where(
-        and(
-          gte(visits.visitDate, startDate),
-          lte(visits.visitDate, endDate)
-        )
-      )
-      .groupBy(visits.visitDate)
-      .orderBy(visits.visitDate);
-
-    return {
-      totalPatients: Number(stats.count || 0),
-      totalRevenue: Number(stats.revenue || 0),
-      averagePrice: Number(stats.avgPrice || 0),
-      patientsPerDay: dailyStats.map(d => ({
-        date: d.date,
-        count: Number(d.count)
-      }))
-    };
+      return {
+        totalPatients: Number(stats.count || 0),
+        totalRevenue: Number(stats.revenue || 0),
+        averagePrice: Math.round(Number(stats.avgPrice || 0)),
+        patientsPerDay: dailyStats.map(d => ({
+          date: String(d.date),
+          count: Number(d.count)
+        }))
+      };
+    } catch (error) {
+      console.error("Database analytics error:", error);
+      throw error;
+    }
   }
 }
 

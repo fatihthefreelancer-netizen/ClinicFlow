@@ -164,7 +164,10 @@ export async function registerRoutes(
     const formattedStart = format(new Date(String(startDate)), 'yyyy-MM-dd');
     const formattedEnd = format(new Date(String(endDate)), 'yyyy-MM-dd');
 
+    console.log("Analytics request params:", { startDate, endDate, formattedStart, formattedEnd });
+
     const data = await storage.getVisits({ startDate: formattedStart, endDate: formattedEnd });
+    console.log("Analytics raw data from storage:", data.length, "records");
     
     let csv = "\uFEFFPatient Name,Arrival Time,Condition,Status,Price,Next Step,Date\n";
     data.forEach(v => {
