@@ -166,12 +166,13 @@ export async function registerRoutes(
 
     const data = await storage.getVisits({ startDate: formattedStart, endDate: formattedEnd });
     
-    let csv = "Patient Name,Arrival Time,Condition,Status,Price,Next Step,Date\n";
+    let csv = "\uFEFFPatient Name,Arrival Time,Condition,Status,Price,Next Step,Date\n";
     data.forEach(v => {
-      csv += `"${v.patientName}","${v.arrivalTime}","${v.condition}","${v.status}","${v.price || 0}","${v.nextStep || ""}","${v.visitDate}"\n`;
+      const arrival = v.arrivalTime ? format(new Date(v.arrivalTime), 'HH:mm') : '--:--';
+      csv += `"${v.patientName}","${arrival}","${v.condition}","${v.status}","${(v.price || 0) / 100}","${v.nextStep || ""}","${v.visitDate}"\n`;
     });
 
-    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename=clinic-export-${formattedStart}-to-${formattedEnd}.csv`);
     res.send(csv);
   });

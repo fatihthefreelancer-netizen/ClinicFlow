@@ -16,7 +16,7 @@ export const profiles = pgTable("profiles", {
 export const visits = pgTable("visits", {
   id: serial("id").primaryKey(),
   patientName: text("patient_name").notNull(),
-  arrivalTime: timestamp("arrival_time").defaultNow().notNull(),
+  arrivalTime: timestamp("arrival_time", { withTimezone: true }).defaultNow().notNull(),
   condition: text("condition").notNull(),
   status: text("status", { enum: ["waiting", "in_consultation", "done", "left"] }).notNull().default("waiting"),
   price: integer("price"), // Stored in cents or just raw number

@@ -19,7 +19,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
-  const NavContent = () => (
+  const navItems = [
+    {
+      href: "/",
+      label: "Live Board",
+      icon: Activity,
+      active: location === "/",
+    },
+    ...(role === "doctor" ? [{
+      href: "/dashboard",
+      label: "Analytics",
+      icon: LayoutDashboard,
+      active: location === "/dashboard",
+    }] : []),
+  ];
+
+  const NavContent = (
     <div className="flex flex-col h-full bg-slate-900 text-white">
       <div className="p-6 border-b border-slate-800">
         <div className="flex items-center gap-3">
@@ -34,29 +49,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="flex-1 py-6 px-4 space-y-1">
-        <Link href="/">
-          <a className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-            location === "/" 
-              ? "bg-primary text-white shadow-lg shadow-primary/20 font-medium" 
-              : "text-slate-400 hover:bg-slate-800 hover:text-white"
-          }`}>
-            <Activity className="h-5 w-5" />
-            Live Board
-          </a>
-        </Link>
-        
-        {role === "doctor" && (
-          <Link href="/dashboard">
-            <a className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-              location === "/dashboard" 
+        {navItems.map((item) => (
+          <Link key={item.href} href={item.href}>
+            <span className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${
+              item.active 
                 ? "bg-primary text-white shadow-lg shadow-primary/20 font-medium" 
                 : "text-slate-400 hover:bg-slate-800 hover:text-white"
             }`}>
-              <LayoutDashboard className="h-5 w-5" />
-              Analytics
-            </a>
+              <item.icon className="h-5 w-5" />
+              {item.label}
+            </span>
           </Link>
-        )}
+        ))}
       </div>
 
       <div className="p-4 border-t border-slate-800 bg-slate-950/50">
@@ -91,7 +95,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background flex">
       {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 shrink-0 fixed inset-y-0 left-0 border-r z-20">
-        <NavContent />
+        {NavContent}
       </div>
 
       {/* Mobile Trigger */}
@@ -109,7 +113,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 w-80 border-r-0">
-            <NavContent />
+            {NavContent}
           </SheetContent>
         </Sheet>
       </div>

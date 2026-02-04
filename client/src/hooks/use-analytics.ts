@@ -8,8 +8,14 @@ export function useAnalytics(dateRange: { startDate: string; endDate: string }) 
       const params = new URLSearchParams(dateRange);
       const url = `${api.analytics.get.path}?${params.toString()}`;
       const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch analytics");
-      return api.analytics.get.responses[200].parse(await res.json());
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to fetch analytics");
+      }
+      const data = await res.json();
+      console.log("Analytics data received:", data);
+      return api.analytics.get.responses[200].parse(data);
     },
+    retry: 1,
   });
 }

@@ -33,12 +33,26 @@ export default function Dashboard() {
   const endDate = new Date().toISOString();
   const startDate = subDays(new Date(), 30).toISOString();
 
-  const { data: analytics, isLoading } = useAnalytics({ startDate, endDate });
+  const { data: analytics, isLoading, error } = useAnalytics({ startDate, endDate });
 
   const handleExport = () => {
-    const params = new URLSearchParams({ startDate, endDate });
-    window.open(`/api/export?${params.toString()}`, '_blank');
+    const params = new URLSearchParams({ 
+      startDate: new Date(startDate).toISOString(), 
+      endDate: new Date(endDate).toISOString() 
+    });
+    window.location.href = `/api/export?${params.toString()}`;
   };
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] gap-4">
+          <p className="text-red-500 font-medium">Failed to load analytics</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </Layout>
+    );
+  }
 
   if (isProfileLoading || isLoading) {
     return (
