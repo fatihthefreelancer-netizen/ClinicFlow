@@ -28,7 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { z } from "zod";
-import { type Visit } from "@shared/routes";
+import { type Visit } from "@shared/schema";
 import { Trash2 } from "lucide-react";
 import { useEffect } from "react";
 

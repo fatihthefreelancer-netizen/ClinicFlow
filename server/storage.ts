@@ -2,7 +2,7 @@ import { db } from "./db";
 import { eq, and, gte, lte, desc, sql } from "drizzle-orm";
 import { 
   users, profiles, visits, 
-  type User, type InsertUser, type Profile, type InsertProfile,
+  type User, type Profile, type InsertProfile,
   type Visit, type InsertVisit, type UpdateVisitRequest
 } from "@shared/schema";
 import { authStorage } from "./replit_integrations/auth/storage";
