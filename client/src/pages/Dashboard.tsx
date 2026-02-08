@@ -1,6 +1,4 @@
 import { Layout } from "@/components/Layout";
-import { useProfile } from "@/hooks/use-profile";
-import { useAnalytics } from "@/hooks/use-analytics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   XAxis, 
@@ -12,123 +10,52 @@ import {
   Line,
   Legend
 } from "recharts";
-import { subDays, format, startOfMonth, endOfMonth, isAfter, differenceInDays } from "date-fns";
-import { Loader2, Users, DollarSign, TrendingUp, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useLocation } from "wouter";
-import { useEffect, useMemo } from "react";
+import { Users, TrendingUp } from "lucide-react";
 
 export default function Dashboard() {
-  const { role, isLoading: isProfileLoading } = useProfile();
-  const [, setLocation] = useLocation();
+  const chartData = [
+    { day: "01 Feb", total: 12, mutuelle: 5, mutuelleRemplie: 3 },
+    { day: "02 Feb", total: 15, mutuelle: 7, mutuelleRemplie: 4 },
+    { day: "03 Feb", total: 10, mutuelle: 4, mutuelleRemplie: 2 },
+    { day: "04 Feb", total: 18, mutuelle: 9, mutuelleRemplie: 6 },
+    { day: "05 Feb", total: 20, mutuelle: 11, mutuelleRemplie: 7 },
+    { day: "06 Feb", total: 16, mutuelle: 8, mutuelleRemplie: 5 },
+    { day: "07 Feb", total: 22, mutuelle: 13, mutuelleRemplie: 9 },
+  ];
 
-  // Protect route
-  useEffect(() => {
-    if (!isProfileLoading && role !== "doctor") {
-      setLocation("/");
-    }
-  }, [role, isProfileLoading, setLocation]);
-
-  const endDate = new Date().toISOString();
-  const startDate = subDays(new Date(), 30).toISOString();
-
-  const { data: analytics, isLoading, error } = useAnalytics({ startDate, endDate });
-
-  // KPI Calculations for current month
-  const kpis = useMemo(() => {
-    if (!analytics?.patientsPerDay) return { avgPatients: "0", avgPrice: "0" };
-
-    const now = new Date();
-    const startOfCurrMonth = startOfMonth(now);
-    const today = now;
-    
-    // Filter days in current month up to today
-    const monthData = analytics.patientsPerDay.filter(d => {
-      const dDate = new Date(d.date);
-      return dDate >= startOfCurrMonth && !isAfter(dDate, today);
-    });
-
-    const totalPatients = monthData.reduce((acc, curr) => acc + curr.count, 0);
-    const passedDays = Math.max(differenceInDays(today, startOfCurrMonth) + 1, 1);
-    const avgPatients = totalPatients / passedDays;
-
-    // Calculate average price for the month
-    // Since we don't have all raw visits, we'll estimate based on averagePrice if it was month-scoped
-    // But for a better approach, we'll use the provided averagePrice as a representative value
-    const avgPrice = analytics.averagePrice || 0;
-    
-    return { 
-      avgPatients: avgPatients.toFixed(1),
-      avgPrice: avgPrice.toFixed(0)
-    };
-  }, [analytics]);
-
-  if (error) {
-    return (
-      <Layout>
-        <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] gap-4">
-          <p className="text-red-500 font-medium">Failed to load analytics: {error.message}</p>
-          <Button onClick={() => window.location.reload()}>Retry</Button>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (isProfileLoading || isLoading) {
-    return (
-      <Layout>
-        <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-slate-500">Analyse des données cliniques...</p>
-          </div>
-        </div>
-      </Layout>
-    );
-  }
-
-  if (role !== "doctor") return null;
-
-  const chartData = (analytics?.patientsPerDay || []).map(d => ({
-    ...d,
-    displayDate: format(new Date(d.date), "d MMM"),
-    // Mocking the specific counts for demonstration as storage needs update for these specifics
-    mutuelleOui: Math.round(d.count * 0.4), 
-    mutuelleRemplie: Math.round(d.count * 0.2)
-  }));
+  const kpis = {
+    avgPatients: 16.1,
+    avgPrice: 120
+  };
 
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
-            <p className="text-slate-500 mt-1">Aperçu des performances</p>
-          </div>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+          <p className="text-slate-500 mt-1">Aperçu des performances (Données de test)</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Nombre moyen de patients par jour (mois en cours)</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">Moyenne de patients par jour</CardTitle>
               <Users className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">{kpis.avgPatients}</div>
-              <p className="text-xs text-slate-400 mt-1">Moyenne journalière</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Prix moyen de consultation (mois en cours)</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">Prix moyen par consultation</CardTitle>
               <TrendingUp className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">
                 {kpis.avgPrice} MAD
               </div>
-              <p className="text-xs text-slate-400 mt-1">Par consultation</p>
             </CardContent>
           </Card>
         </div>
@@ -136,7 +63,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 gap-6">
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader>
-              <CardTitle>Volume de Patients (30 derniers jours)</CardTitle>
+              <CardTitle>Nombre de patients par jour</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[400px] w-full">
@@ -144,7 +71,7 @@ export default function Dashboard() {
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                     <XAxis 
-                      dataKey="displayDate" 
+                      dataKey="day" 
                       stroke="#94a3b8"
                       fontSize={12}
                     />
@@ -155,7 +82,7 @@ export default function Dashboard() {
                     <Legend verticalAlign="top" height={36}/>
                     <Line 
                       type="monotone" 
-                      dataKey="count" 
+                      dataKey="total" 
                       name="Total Patients"
                       stroke="#3b82f6" 
                       strokeWidth={3}
@@ -164,7 +91,7 @@ export default function Dashboard() {
                     />
                     <Line 
                       type="monotone" 
-                      dataKey="mutuelleOui" 
+                      dataKey="mutuelle" 
                       name="Mutuelle = Oui"
                       stroke="#10b981" 
                       strokeWidth={2}
