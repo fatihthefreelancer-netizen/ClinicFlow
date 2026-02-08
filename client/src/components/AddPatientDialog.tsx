@@ -21,18 +21,34 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { z } from "zod";
 
 // Helper schema for the form since some fields are auto-generated/defaults
 const formSchema = insertVisitSchema.pick({
   patientName: true,
+  age: true,
+  mutuelle: true,
+  mutuelleRemplie: true,
   condition: true,
 }).extend({
   // Optional client-side only validations
-  patientName: z.string().min(2, "Name must be at least 2 characters"),
-  condition: z.string().min(3, "Please describe the condition"),
+  patientName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  age: z.number({ invalid_type_error: "L'âge doit être un nombre" }).min(0, "L'âge ne peut pas être négatif").optional(),
+  condition: z.string().min(3, "Veuillez décrire la condition"),
+  mutuelle: z.enum(["Oui", "Non"]),
+  mutuelleRemplie: z.enum(["Oui", "Non"]),
+}).refine((data) => !(data.mutuelle === "Non" && data.mutuelleRemplie === "Oui"), {
+  message: "Si Mutuelle est 'Non', Mutuelle remplie doit être 'Non'",
+  path: ["mutuelleRemplie"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -45,9 +61,22 @@ export function AddPatientDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       patientName: "",
+      age: undefined,
+      mutuelle: "Non",
+      mutuelleRemplie: "Non",
       condition: "",
     },
   });
+
+  // Business rule: If mutuelle is Non, mutuelleRemplie must be Non
+  const mutuelleValue = form.watch("mutuelle");
+  const mutuelleRemplieValue = form.watch("mutuelleRemplie");
+
+  useEffect(() => {
+    if (mutuelleValue === "Non" && mutuelleRemplieValue === "Oui") {
+      form.setValue("mutuelleRemplie", "Non");
+    }
+  }, [mutuelleValue, mutuelleRemplieValue, form]);
 
   async function onSubmit(data: FormValues) {
     try {
@@ -67,14 +96,14 @@ export function AddPatientDialog() {
       <DialogTrigger asChild>
         <Button className="bg-primary hover:bg-blue-600 shadow-lg shadow-blue-500/20 text-white rounded-xl px-6">
           <Plus className="w-5 h-5 mr-2" />
-          Add Patient
+          Ajouter un Patient
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New Patient</DialogTitle>
+          <DialogTitle>Ajouter un Nouveau Patient</DialogTitle>
           <DialogDescription>
-            Enter patient details to add them to the queue. Arrival time is recorded automatically.
+            Saisissez les détails du patient pour l'ajouter à la file d'attente. L'heure d'arrivée est enregistrée automatiquement.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -84,10 +113,77 @@ export function AddPatientDialog() {
               name="patientName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Patient Name</FormLabel>
+                  <FormLabel>Nom du Patient</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="Jean Dupont" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="age"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Âge</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="45" 
+                        {...field} 
+                        onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                        value={field.value ?? ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="mutuelle"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mutuelle</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Oui">Oui</SelectItem>
+                        <SelectItem value="Non">Non</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="mutuelleRemplie"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Mutuelle Remplie</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value}
+                    disabled={mutuelleValue === "Non"}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Oui">Oui</SelectItem>
+                      <SelectItem value="Non">Non</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -97,9 +193,9 @@ export function AddPatientDialog() {
               name="condition"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Condition / Symptoms</FormLabel>
+                  <FormLabel>Pathologie / Symptômes</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Fever, cough..." className="resize-none" {...field} />
+                    <Textarea placeholder="Fièvre, toux..." className="resize-none" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -107,7 +203,7 @@ export function AddPatientDialog() {
             />
             <div className="flex justify-end pt-2">
               <Button type="submit" disabled={isPending} className="w-full">
-                {isPending ? "Adding..." : "Add to Queue"}
+                {isPending ? "Ajout..." : "Ajouter à la file"}
               </Button>
             </div>
           </form>

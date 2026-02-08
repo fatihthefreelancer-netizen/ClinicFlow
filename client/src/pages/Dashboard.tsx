@@ -54,7 +54,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
           <div className="flex flex-col items-center gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-slate-500">Analyzing clinic data...</p>
+            <p className="text-slate-500">Analyse des données cliniques...</p>
           </div>
         </div>
       </Layout>
@@ -88,12 +88,12 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Clinic Analytics</h1>
-            <p className="text-slate-500 mt-1">Performance overview for the last 30 days</p>
+            <h1 className="text-3xl font-bold text-slate-900">Analyses de la Clinique</h1>
+            <p className="text-slate-500 mt-1">Aperçu des performances pour les 30 derniers jours</p>
           </div>
           <Button variant="outline" className="gap-2" onClick={handleExport}>
             <Download className="h-4 w-4" />
-            Export CSV
+            Exporter CSV
           </Button>
         </div>
 
@@ -105,33 +105,33 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">{stats.totalPatients}</div>
-              <p className="text-xs text-slate-400 mt-1">Last 30 days</p>
+              <p className="text-xs text-slate-400 mt-1">30 derniers jours</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Revenue</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">Revenus</CardTitle>
               <DollarSign className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">
-                ${stats.totalRevenue ? (stats.totalRevenue / 100).toFixed(2) : "0.00"}
+                {stats.totalRevenue ? (stats.totalRevenue / 100).toFixed(2) : "0.00"}€
               </div>
-              <p className="text-xs text-slate-400 mt-1">Total accumulated</p>
+              <p className="text-xs text-slate-400 mt-1">Total accumulé</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white border-slate-200 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Avg. Consultation</CardTitle>
+              <CardTitle className="text-sm font-medium text-slate-500">Moy. Consultation</CardTitle>
               <TrendingUp className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">
-                ${stats.averagePrice ? (stats.averagePrice / 100).toFixed(2) : "0.00"}
+                {stats.averagePrice ? (stats.averagePrice / 100).toFixed(2) : "0.00"}€
               </div>
-              <p className="text-xs text-slate-400 mt-1">Per patient</p>
+              <p className="text-xs text-slate-400 mt-1">Par patient</p>
             </CardContent>
           </Card>
         </div>
@@ -139,7 +139,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-white border-slate-200 shadow-sm col-span-2">
             <CardHeader>
-              <CardTitle>Patient Volume Trend</CardTitle>
+              <CardTitle>Tendance du Volume de Patients</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] w-full">
@@ -158,7 +158,7 @@ export default function Dashboard() {
                       domain={['auto', 'auto']}
                       tickFormatter={(value) => {
                         try {
-                          return format(new Date(value), "MMM d");
+                          return format(new Date(value), "d MMM");
                         } catch (e) {
                           return "";
                         }
@@ -171,11 +171,12 @@ export default function Dashboard() {
                       contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                       labelFormatter={(value) => {
                         try {
-                          return format(new Date(value), "MMM d, yyyy");
+                          return format(new Date(value), "d MMM yyyy");
                         } catch (e) {
                           return "";
                         }
                       }}
+                      formatter={(value) => [value, "Patients"]}
                     />
                     <Area 
                       type="monotone" 

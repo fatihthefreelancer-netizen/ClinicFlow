@@ -16,6 +16,9 @@ export const profiles = pgTable("profiles", {
 export const visits = pgTable("visits", {
   id: serial("id").primaryKey(),
   patientName: text("patient_name").notNull(),
+  age: integer("age"),
+  mutuelle: text("mutuelle", { enum: ["Oui", "Non"] }).notNull().default("Non"),
+  mutuelleRemplie: text("mutuelle_remplie", { enum: ["Oui", "Non"] }).notNull().default("Non"),
   arrivalTime: timestamp("arrival_time", { withTimezone: true }).defaultNow().notNull(),
   condition: text("condition").notNull(),
   status: text("status", { enum: ["waiting", "in_consultation", "done", "left"] }).notNull().default("waiting"),

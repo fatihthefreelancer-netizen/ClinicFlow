@@ -22,13 +22,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     {
       href: "/",
-      label: "Live Board",
+      label: "Tableau de Bord",
       icon: Activity,
       active: location === "/",
     },
     ...(role === "doctor" ? [{
       href: "/dashboard",
-      label: "Analytics",
+      label: "Analyses",
       icon: LayoutDashboard,
       active: location === "/dashboard",
     }] : []),
@@ -43,7 +43,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <h1 className="font-display font-bold text-xl tracking-tight">ClinicFlow</h1>
-            <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Live Board</p>
+            <p className="text-xs text-slate-400 uppercase tracking-wider font-medium">Tableau de Bord</p>
           </div>
         </div>
       </div>
@@ -85,7 +85,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           onClick={() => logout()}
         >
           <LogOut className="mr-2 h-4 w-4" />
-          Log Out
+          Déconnexion
         </Button>
       </div>
     </div>

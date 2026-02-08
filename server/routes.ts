@@ -169,10 +169,10 @@ export async function registerRoutes(
     const data = await storage.getVisits({ startDate: formattedStart, endDate: formattedEnd });
     console.log("Analytics raw data from storage:", data.length, "records");
     
-    let csv = "\uFEFFPatient Name,Arrival Time,Condition,Status,Price,Next Step,Date\n";
+    let csv = "\uFEFFArrivée,Nom du patient,Âge,Condition,Statut,Mutuelle,Mutuelle Remplie,Prix,Étape Suivante,Date\n";
     data.forEach(v => {
       const arrival = v.arrivalTime ? format(new Date(v.arrivalTime), 'HH:mm') : '--:--';
-      csv += `"${v.patientName}","${arrival}","${v.condition}","${v.status}","${(v.price || 0) / 100}","${v.nextStep || ""}","${v.visitDate}"\n`;
+      csv += `"${arrival}","${v.patientName}","${v.age ?? ""}","${v.condition}","${v.status}","${v.mutuelle}","${v.mutuelleRemplie}","${(v.price || 0) / 100}","${v.nextStep || ""}","${v.visitDate}"\n`;
     });
 
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
@@ -184,14 +184,20 @@ export async function registerRoutes(
   if (existingVisits.length === 0) {
     const today = format(new Date(), 'yyyy-MM-dd');
     await storage.createVisit({
-      patientName: "John Doe",
-      condition: "Flu symptoms",
+      patientName: "Jean Dupont",
+      age: 45,
+      mutuelle: "Oui",
+      mutuelleRemplie: "Non",
+      condition: "Symptômes grippaux",
       status: "waiting",
       visitDate: today,
     });
     await storage.createVisit({
-      patientName: "Jane Smith",
-      condition: "Back pain",
+      patientName: "Marie Durant",
+      age: 32,
+      mutuelle: "Non",
+      mutuelleRemplie: "Non",
+      condition: "Mal de dos",
       status: "in_consultation",
       visitDate: today,
     });

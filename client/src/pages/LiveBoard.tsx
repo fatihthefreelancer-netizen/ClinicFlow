@@ -46,10 +46,10 @@ export default function LiveBoard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Live Patient Board</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Tableau des Patients</h1>
             <p className="text-slate-500 mt-1 flex items-center gap-2">
               <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              Real-time updates active
+              Mises à jour en temps réel activées
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -71,7 +71,7 @@ export default function LiveBoard() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input 
-              placeholder="Search by patient name or condition..." 
+              placeholder="Rechercher par nom de patient ou pathologie..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 border-0 bg-transparent focus-visible:ring-0"
@@ -85,29 +85,32 @@ export default function LiveBoard() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow className="border-slate-100 hover:bg-slate-50">
-                  <TableHead className="w-[100px] font-semibold text-slate-600">Arrival</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Patient Name</TableHead>
+                  <TableHead className="w-[100px] font-semibold text-slate-600">Arrivée</TableHead>
+                  <TableHead className="font-semibold text-slate-600">Nom du patient</TableHead>
+                  <TableHead className="w-[80px] font-semibold text-slate-600">Âge</TableHead>
                   <TableHead className="font-semibold text-slate-600">Condition</TableHead>
-                  <TableHead className="w-[140px] font-semibold text-slate-600">Status</TableHead>
-                  <TableHead className="w-[100px] text-right font-semibold text-slate-600">Price</TableHead>
-                  <TableHead className="w-[200px] font-semibold text-slate-600">Next Steps</TableHead>
+                  <TableHead className="w-[140px] font-semibold text-slate-600">Statut</TableHead>
+                  <TableHead className="w-[100px] font-semibold text-slate-600">Mutuelle</TableHead>
+                  <TableHead className="w-[140px] font-semibold text-slate-600">Mutuelle Remplie</TableHead>
+                  <TableHead className="w-[100px] text-right font-semibold text-slate-600">Prix</TableHead>
+                  <TableHead className="w-[200px] font-semibold text-slate-600">Étape Suivante</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-48 text-center">
+                    <TableCell colSpan={9} className="h-48 text-center">
                       <div className="flex flex-col items-center justify-center text-slate-400">
                         <Loader2 className="h-8 w-8 animate-spin mb-2" />
-                        <p>Loading visits...</p>
+                        <p>Chargement des visites...</p>
                       </div>
                     </TableCell>
                   </TableRow>
                 ) : filteredVisits.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-48 text-center">
-                      <p className="text-slate-500 font-medium">No visits found for this date.</p>
-                      <p className="text-sm text-slate-400">Add a patient to get started.</p>
+                    <TableCell colSpan={9} className="h-48 text-center">
+                      <p className="text-slate-500 font-medium">Aucune visite trouvée pour cette date.</p>
+                      <p className="text-sm text-slate-400">Ajoutez un patient pour commencer.</p>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -129,14 +132,23 @@ export default function LiveBoard() {
                       <TableCell className="font-medium text-slate-900">
                         {visit.patientName}
                       </TableCell>
+                      <TableCell className="text-slate-600">
+                        {visit.age ?? "-"}
+                      </TableCell>
                       <TableCell className="text-slate-600 max-w-[200px] truncate" title={visit.condition}>
                         {visit.condition}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={visit.status} />
                       </TableCell>
+                      <TableCell className="text-slate-600">
+                        {visit.mutuelle}
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {visit.mutuelleRemplie}
+                      </TableCell>
                       <TableCell className="text-right font-mono text-slate-600">
-                        {visit.price ? `$${(visit.price / 100).toFixed(2)}` : "-"}
+                        {visit.price ? `${(visit.price / 100).toFixed(2)}€` : "-"}
                       </TableCell>
                       <TableCell className="text-slate-500 max-w-[200px] truncate">
                         {visit.nextStep || "-"}

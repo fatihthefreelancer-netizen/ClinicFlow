@@ -30,6 +30,7 @@ import {
 import { z } from "zod";
 import { type Visit } from "@shared/routes";
 import { Trash2 } from "lucide-react";
+import { useEffect } from "react";
 
 interface EditVisitDialogProps {
   visit: Visit | null;
@@ -46,7 +47,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
   const { mutateAsync: updateVisit, isPending: isUpdating } = useUpdateVisit();
   const { mutateAsync: deleteVisit, isPending: isDeleting } = useDeleteVisit();
 
-  // Assistant restricted schema: can only edit name, condition, status
+  // Assistant restricted schema: can only edit name, age, condition, status, mutuelle
   // Doctor full schema: can edit everything including price, nextStep
   const isDoctor = role === "doctor";
 
@@ -54,12 +55,25 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
     resolver: zodResolver(fullSchema),
     values: visit || {
       patientName: "",
+      age: undefined,
+      mutuelle: "Non",
+      mutuelleRemplie: "Non",
       condition: "",
       status: "waiting",
       price: undefined,
       nextStep: "",
     },
   });
+
+  // Business rule: If mutuelle is Non, mutuelleRemplie must be Non
+  const mutuelleValue = form.watch("mutuelle");
+  const mutuelleRemplieValue = form.watch("mutuelleRemplie");
+
+  useEffect(() => {
+    if (mutuelleValue === "Non" && mutuelleRemplieValue === "Oui") {
+      form.setValue("mutuelleRemplie", "Non");
+    }
+  }, [mutuelleValue, mutuelleRemplieValue, form]);
 
   async function onSubmit(data: FormValues) {
     if (!visit) return;
@@ -78,7 +92,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
   }
 
   const handleDelete = async () => {
-    if (!visit || !confirm("Are you sure you want to remove this patient from the list?")) return;
+    if (!visit || !confirm("Êtes-vous sûr de vouloir supprimer ce patient de la liste ?")) return;
     try {
       await deleteVisit(visit.id);
       onOpenChange(false);
@@ -91,7 +105,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Edit Patient Details</DialogTitle>
+          <DialogTitle>Modifier les Détails du Patient</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -101,9 +115,28 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                 name="patientName"
                 render={({ field }) => (
                   <FormItem className="col-span-2">
-                    <FormLabel>Patient Name</FormLabel>
+                    <FormLabel>Nom du Patient</FormLabel>
                     <FormControl>
                       <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="age"
+                render={({ field }) => (
+                  <FormItem className="col-span-2 sm:col-span-1">
+                    <FormLabel>Âge</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
+                        value={field.value ?? ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -115,18 +148,66 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                 name="status"
                 render={({ field }) => (
                   <FormItem className="col-span-2 sm:col-span-1">
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel>Statut</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
+                          <SelectValue placeholder="Sélectionner le statut" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="waiting">Waiting</SelectItem>
-                        <SelectItem value="in_consultation">In Consultation</SelectItem>
-                        <SelectItem value="done">Done</SelectItem>
-                        <SelectItem value="left">Left (No Show)</SelectItem>
+                        <SelectItem value="waiting">En attente</SelectItem>
+                        <SelectItem value="in_consultation">En consultation</SelectItem>
+                        <SelectItem value="done">Terminé</SelectItem>
+                        <SelectItem value="left">Parti (Absent)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="mutuelle"
+                render={({ field }) => (
+                  <FormItem className="col-span-2 sm:col-span-1">
+                    <FormLabel>Mutuelle</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Oui">Oui</SelectItem>
+                        <SelectItem value="Non">Non</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="mutuelleRemplie"
+                render={({ field }) => (
+                  <FormItem className="col-span-2 sm:col-span-1">
+                    <FormLabel>Mutuelle Remplie</FormLabel>
+                    <Select 
+                      onValueChange={field.onChange} 
+                      value={field.value}
+                      disabled={mutuelleValue === "Non"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Oui">Oui</SelectItem>
+                        <SelectItem value="Non">Non</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -140,7 +221,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                   name="price"
                   render={({ field }) => (
                     <FormItem className="col-span-2 sm:col-span-1">
-                      <FormLabel>Price (Cents)</FormLabel>
+                      <FormLabel>Prix (Cents)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 
@@ -176,12 +257,12 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                 name="nextStep"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Next Steps / Notes</FormLabel>
+                    <FormLabel>Étapes Suivantes / Notes</FormLabel>
                     <FormControl>
                       <Textarea 
                         {...field} 
                         value={field.value || ''}
-                        placeholder="Prescription given, follow up in 2 weeks..." 
+                        placeholder="Ordonnance délivrée, suivi dans 2 semaines..." 
                         className="resize-none h-20" 
                       />
                     </FormControl>
@@ -203,10 +284,10 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
               </Button>
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancel
+                  Annuler
                 </Button>
                 <Button type="submit" disabled={isUpdating}>
-                  {isUpdating ? "Saving..." : "Save Changes"}
+                  {isUpdating ? "Enregistrement..." : "Enregistrer les modifications"}
                 </Button>
               </div>
             </div>
