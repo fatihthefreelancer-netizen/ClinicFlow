@@ -28,7 +28,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     },
     ...(role === "doctor" ? [{
       href: "/dashboard",
-      label: "Analyses",
+      label: "Dashboard",
       icon: LayoutDashboard,
       active: location === "/dashboard",
     }] : []),

@@ -122,7 +122,7 @@ export class DatabaseStorage implements IStorage {
       return {
         totalPatients: Number(stats.count || 0),
         totalRevenue: Number(stats.revenue || 0),
-        averagePrice: Math.round(Number(stats.avgPrice || 0)),
+        averagePrice: Number(stats.avgPrice || 0),
         patientsPerDay: dailyStats.map(d => ({
           date: String(d.date),
           count: Number(d.count)

@@ -1,0 +1,40 @@
+Please apply the following changes strictly as described.
+1. Price – Currency and input
+•	Change the consultation price currency to Moroccan Dirham (MAD / Dhs).
+•	The doctor must enter the price directly in dirhams.
+•	The price must be displayed in dirhams everywhere in the UI.
+•	Remove any usage of euros or price input in cents.
+2. Export patient table (Excel)
+•	Add a download/export icon at the far right of the interface, placed to the right of the “Add patient” button.
+•	When clicked, automatically download the currently displayed patient table.
+•	The exported file format must be .xlsx (Excel).
+•	The exported data must correspond to the date currently selected in the date input, not necessarily today.
+3. Calendar UX
+•	When hovering over the calendar icon used to select the date, the cursor must change to a pointer (hand) to clearly indicate that it is clickable.
+•	No functional changes are required, only the cursor behavior.
+4. Rename “Analyses” to “Dashboard”
+•	Rename the “Analyses” section to “Dashboard”.
+5. Dashboard content
+The Dashboard must contain exactly three elements:
+5.1 Line chart – Number of patients per day
+•	Display a single line chart showing data for the last 30 days.
+•	X-axis: days
+•	Y-axis: number of patients
+•	The chart must contain three lines:
+1.	Total number of patients added per day
+2.	Number of patients with Mutuelle = “Oui”
+3.	Number of patients with Mutuelle remplie = “Oui”
+5.2 KPI – Average number of patients per day (current month)
+•	Calculate the average based on the currently selected month.
+•	Only include days that have already passed in that month.
+•	Example: if today is February 8:
+o	Period: February 1 → February 8
+o	Average = (total number of patients from Feb 1 to Feb 8) ÷ 8
+•	Do not divide by the total number of days in the month.
+5.3 KPI – Average consultation price (current month)
+•	Calculate the average consultation price for the current month, up to the current day.
+•	Formula:
+o	(Sum of all consultation prices from the start of the month to the current day)
+o	÷ (Total number of consultations during that period)
+•	Display the result in MAD.
+No other behavior or functionality should be modified.

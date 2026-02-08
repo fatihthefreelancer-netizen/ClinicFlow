@@ -221,7 +221,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                   name="price"
                   render={({ field }) => (
                     <FormItem className="col-span-2 sm:col-span-1">
-                      <FormLabel>Prix (Cents)</FormLabel>
+                      <FormLabel>Prix (MAD)</FormLabel>
                       <FormControl>
                         <Input 
                           type="number" 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useVisits } from "@/hooks/use-visits";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { format } from "date-fns";
@@ -17,8 +17,9 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Search, Loader2, Calendar } from "lucide-react";
+import { Search, Loader2, Calendar, FileDown } from "lucide-react";
 import type { Visit } from "@shared/routes";
+import * as XLSX from "xlsx";
 
 export default function LiveBoard() {
   // Init WebSocket for real-time updates
@@ -41,6 +42,28 @@ export default function LiveBoard() {
     setIsEditDialogOpen(true);
   };
 
+  const handleExportExcel = () => {
+    if (!filteredVisits || filteredVisits.length === 0) return;
+
+    const data = filteredVisits.map(v => ({
+      "Arrivée": v.arrivalTime ? format(new Date(v.arrivalTime), "HH:mm") : "--:--",
+      "Nom du patient": v.patientName,
+      "Âge": v.age || "",
+      "Condition": v.condition,
+      "Statut": v.status,
+      "Mutuelle": v.mutuelle,
+      "Mutuelle Remplie": v.mutuelleRemplie,
+      "Prix (MAD)": v.price || "",
+      "Étape Suivante": v.nextStep || "",
+      "Date": selectedDate
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Patients");
+    XLSX.writeFile(workbook, `clinic-export-${selectedDate}.xlsx`);
+  };
+
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -52,17 +75,28 @@ export default function LiveBoard() {
               Mises à jour en temps réel activées
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-             <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+             <div className="relative group">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 cursor-pointer pointer-events-none" />
                 <Input 
                   type="date" 
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="pl-9 w-full sm:w-auto bg-white border-slate-200"
+                  className="pl-9 w-full sm:w-auto bg-white border-slate-200 cursor-pointer [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
              </div>
-             <AddPatientDialog />
+             <div className="flex gap-2">
+               <AddPatientDialog />
+               <Button 
+                 variant="outline" 
+                 size="icon" 
+                 onClick={handleExportExcel}
+                 title="Exporter en Excel"
+                 className="rounded-xl border-slate-200"
+               >
+                 <FileDown className="h-5 w-5" />
+               </Button>
+             </div>
           </div>
         </div>
 
@@ -148,7 +182,7 @@ export default function LiveBoard() {
                         {visit.mutuelleRemplie}
                       </TableCell>
                       <TableCell className="text-right font-mono text-slate-600">
-                        {visit.price ? `${(visit.price / 100).toFixed(2)}€` : "-"}
+                        {visit.price ? `${visit.price} Dhs` : "-"}
                       </TableCell>
                       <TableCell className="text-slate-500 max-w-[200px] truncate">
                         {visit.nextStep || "-"}
