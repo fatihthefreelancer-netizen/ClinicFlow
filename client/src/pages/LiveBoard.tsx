@@ -18,7 +18,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Search, Loader2, Calendar, FileDown } from "lucide-react";
-import type { Visit } from "@shared/routes";
+import { type Visit } from "@shared/schema";
 import * as XLSX from "xlsx";
 
 export default function LiveBoard() {

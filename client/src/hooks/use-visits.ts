@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type InsertVisit, type Visit } from "@shared/routes";
+import { api, buildUrl } from "@shared/routes";
+import { type InsertVisit, type Visit } from "@shared/schema";
 
 export function useVisits(params?: { date?: string }) {
   const queryParams = params ? `?date=${params.date}` : "";
