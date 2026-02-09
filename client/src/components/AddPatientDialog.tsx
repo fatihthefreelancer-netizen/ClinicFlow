@@ -35,6 +35,7 @@ import { z } from "zod";
 // Helper schema for the form since some fields are auto-generated/defaults
 const formSchema = insertVisitSchema.pick({
   patientName: true,
+  phoneNumber: true,
   age: true,
   mutuelle: true,
   mutuelleRemplie: true,
@@ -42,6 +43,7 @@ const formSchema = insertVisitSchema.pick({
 }).extend({
   // Optional client-side only validations
   patientName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+  phoneNumber: z.string().regex(/^\d*$/, "Le numéro doit contenir uniquement des chiffres").optional(),
   age: z.number({ invalid_type_error: "L'âge doit être un nombre" }).min(0, "L'âge ne peut pas être négatif").optional(),
   condition: z.string().min(3, "Veuillez décrire la condition"),
   mutuelle: z.enum(["Oui", "Non"]),
@@ -61,6 +63,7 @@ export function AddPatientDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       patientName: "",
+      phoneNumber: "",
       age: undefined,
       mutuelle: "Non",
       mutuelleRemplie: "Non",
@@ -116,6 +119,19 @@ export function AddPatientDialog() {
                   <FormLabel>Nom du Patient</FormLabel>
                   <FormControl>
                     <Input placeholder="Jean Dupont" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phoneNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Numéro de téléphone</FormLabel>
+                  <FormControl>
+                    <Input placeholder="0612345678" {...field} value={field.value || ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

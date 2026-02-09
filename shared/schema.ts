@@ -16,6 +16,7 @@ export const profiles = pgTable("profiles", {
 export const visits = pgTable("visits", {
   id: serial("id").primaryKey(),
   patientName: text("patient_name").notNull(),
+  phoneNumber: text("phone_number"),
   age: integer("age"),
   mutuelle: text("mutuelle", { enum: ["Oui", "Non"] }).notNull().default("Non"),
   mutuelleRemplie: text("mutuelle_remplie", { enum: ["Oui", "Non"] }).notNull().default("Non"),

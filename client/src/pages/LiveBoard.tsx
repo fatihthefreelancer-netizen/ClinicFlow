@@ -121,6 +121,7 @@ export default function LiveBoard() {
                 <TableRow className="border-slate-100 hover:bg-slate-50">
                   <TableHead className="w-[100px] font-semibold text-slate-600">Arrivée</TableHead>
                   <TableHead className="font-semibold text-slate-600">Nom du patient</TableHead>
+                  <TableHead className="font-semibold text-slate-600">Numéro de téléphone</TableHead>
                   <TableHead className="w-[80px] font-semibold text-slate-600">Âge</TableHead>
                   <TableHead className="font-semibold text-slate-600">Condition</TableHead>
                   <TableHead className="w-[140px] font-semibold text-slate-600">Statut</TableHead>
@@ -165,6 +166,9 @@ export default function LiveBoard() {
                       </TableCell>
                       <TableCell className="font-medium text-slate-900">
                         {visit.patientName}
+                      </TableCell>
+                      <TableCell className="text-slate-600">
+                        {visit.phoneNumber || "-"}
                       </TableCell>
                       <TableCell className="text-slate-600">
                         {visit.age ?? "-"}

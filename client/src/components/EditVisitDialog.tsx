@@ -169,6 +169,20 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
 
               <FormField
                 control={form.control}
+                name="phoneNumber"
+                render={({ field }) => (
+                  <FormItem className="col-span-2">
+                    <FormLabel>Numéro de téléphone</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value || ""} onChange={(e) => field.onChange(e.target.value.replace(/\D/g, ""))} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="mutuelle"
                 render={({ field }) => (
                   <FormItem className="col-span-2 sm:col-span-1">

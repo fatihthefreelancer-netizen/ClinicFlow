@@ -1,0 +1,48 @@
+Please apply the following changes strictly as described.
+Do not add sample data, mock data, or placeholder records unless explicitly requested.
+________________________________________
+1. Patient table – Phone number column
+•	Add a new database field and UI column named “Numéro de téléphone”.
+•	Type: text (with digits only)
+•	This field is optional.
+•	Display this column immediately after the “Nom du patient” column in the patient table.
+________________________________________
+2. Remove automatic creation of fictitious patients
+•	The system must NOT automatically create any patient records.
+•	When opening the application for the first time in a given day, the patient table must be empty.
+•	Patients must appear only when explicitly added by the doctor or the assistant.
+•	Patients from previous dates must remain stored in the database and visible when their date is selected.
+•	No default, test, demo, or placeholder patients should be created at any time.
+•	List all places where patient records are created automatically and remove them
+________________________________________
+3. Authentication process
+•	The application currently has two accounts that access the same patient table and the same dashboard.
+Doctor account
+•	Username: Hakim1
+•	Password: Docteur1
+Assistant account
+•	Username: Assistant1
+•	Password: Assistant1
+•	Both accounts must:
+o	Access the same data
+o	See the same patient list
+o	See the same dashboard
+•	Do not add role-based restrictions for now.
+•	This authentication setup is temporary and must be hardcoded.
+________________________________________
+4. Dashboard – New real-time KPI card
+Add a new Dashboard card that displays:
+“Nombre de patients aujourd’hui”
+Definition:
+•	Count only patients added today.
+•	Include patients whose status is:
+o	“En attente”
+o	“En consultation”
+o	“Terminé”
+•	Exclude patients whose status is:
+o	“Parti (Absent)”
+Behavior:
+•	This metric must update automatically in real time.
+•	Each time a patient is added or their status changes, the displayed number must update immediately.
+________________________________________
+Do not modify any other existing behavior unless explicitly required above.
