@@ -2,13 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
 import { type InsertVisit, type Visit } from "@shared/schema";
 
-export function useVisits(params?: { date?: string }) {
-  const queryParams = params ? `?date=${params.date}` : "";
+export function useVisits(params?: { date?: string; startDate?: string; endDate?: string }) {
+  const queryParams = params ? new URLSearchParams(params as any).toString() : "";
+  const queryString = queryParams ? `?${queryParams}` : "";
   
   return useQuery({
-    queryKey: [api.visits.list.path, params?.date],
+    queryKey: [api.visits.list.path, params],
     queryFn: async () => {
-      const url = api.visits.list.path + queryParams;
+      const url = api.visits.list.path + queryString;
       const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch visits");
       return api.visits.list.responses[200].parse(await res.json());

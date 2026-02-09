@@ -14,22 +14,54 @@ import { Users, TrendingUp, Activity } from "lucide-react";
 import { useVisits } from "@/hooks/use-visits";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { useAnalytics } from "@/hooks/use-analytics";
-import { format, subDays } from "date-fns";
+import { format, subDays, startOfMonth } from "date-fns";
+import { fr } from "date-fns/locale";
 import { useMemo } from "react";
 
 export default function Dashboard() {
   useWebSocket();
-  const today = format(new Date(), "yyyy-MM-dd");
-  const { data: visits } = useVisits({ date: today });
+  const todayDate = new Date();
+  const todayStr = format(todayDate, "yyyy-MM-dd");
+  const monthStart = startOfMonth(todayDate);
+  const monthStartStr = format(monthStart, "yyyy-MM-dd");
+  const monthName = format(todayDate, "MMMM", { locale: fr });
+  const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+  const { data: currentMonthVisits } = useVisits({ 
+    startDate: monthStartStr,
+    endDate: todayStr 
+  } as any);
+
+  const { data: visitsToday } = useVisits({ date: todayStr });
 
   const patientsAujourdhui = useMemo(() => {
-    if (!visits) return 0;
-    return visits.filter(v => ["waiting", "in_consultation", "done"].includes(v.status)).length;
-  }, [visits]);
+    if (!visitsToday) return 0;
+    return visitsToday.filter(v => ["waiting", "in_consultation", "done"].includes(v.status)).length;
+  }, [visitsToday]);
 
-  const { data: analytics, isLoading: isAnalyticsLoading } = useAnalytics({ 
-    startDate: subDays(new Date(), 30).toISOString(), 
-    endDate: new Date().toISOString() 
+  const statsMensuelles = useMemo(() => {
+    if (!currentMonthVisits) return { avgPatients: 0, avgPrice: 0 };
+
+    // Metric 1: Avg patients per day
+    const validStatuses = ["waiting", "in_consultation", "done"];
+    const monthPatients = currentMonthVisits.filter(v => validStatuses.includes(v.status));
+    const dayOfMonth = todayDate.getDate();
+    const avgPatients = monthPatients.length / dayOfMonth;
+
+    // Metric 2: Avg price per consultation
+    const patientsWithPrice = currentMonthVisits.filter(v => v.price !== null && v.price !== undefined);
+    const totalPrice = patientsWithPrice.reduce((sum, v) => sum + (v.price || 0), 0);
+    const avgPrice = patientsWithPrice.length > 0 ? totalPrice / patientsWithPrice.length : 0;
+
+    return {
+      avgPatients: avgPatients.toFixed(1),
+      avgPrice: Math.round(avgPrice)
+    };
+  }, [currentMonthVisits, todayDate]);
+
+  const { data: analytics } = useAnalytics({ 
+    startDate: subDays(todayDate, 30).toISOString(), 
+    endDate: todayDate.toISOString() 
   });
 
   const chartData = useMemo(() => {
@@ -50,14 +82,6 @@ export default function Dashboard() {
     }));
   }, [analytics]);
 
-  const kpis = useMemo(() => {
-    if (!analytics) return { avgPatients: 16.1, avgPrice: 120 };
-    return {
-      avgPatients: (analytics.totalPatients / 30).toFixed(1),
-      avgPrice: analytics.averagePrice.toFixed(0)
-    };
-  }, [analytics]);
-
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -68,7 +92,7 @@ export default function Dashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card className="bg-white border-slate-200 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
               <CardTitle className="text-sm font-medium text-slate-500">Nombre de patients aujourd'hui</CardTitle>
               <Activity className="h-4 w-4 text-green-500" />
             </CardHeader>
@@ -78,23 +102,27 @@ export default function Dashboard() {
           </Card>
 
           <Card className="bg-white border-slate-200 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Moyenne de patients par jour</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
+              <CardTitle className="text-sm font-medium text-slate-500">
+                Moyenne de patients par jour – {capitalizedMonth}
+              </CardTitle>
               <Users className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-slate-900">{kpis.avgPatients}</div>
+              <div className="text-2xl font-bold text-slate-900">{statsMensuelles.avgPatients}</div>
             </CardContent>
           </Card>
 
           <Card className="bg-white border-slate-200 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-500">Prix moyen par consultation</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
+              <CardTitle className="text-sm font-medium text-slate-500">
+                Prix moyen par consultation – {capitalizedMonth}
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">
-                {kpis.avgPrice} MAD
+                {statsMensuelles.avgPrice} MAD
               </div>
             </CardContent>
           </Card>

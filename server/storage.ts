@@ -46,7 +46,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getVisits(options?: { date?: string; startDate?: string; endDate?: string }): Promise<Visit[]> {
-    let query = db.select().from(visits);
+    let query = db.select({
+      id: visits.id,
+      patientName: visits.patientName,
+      phoneNumber: visits.phoneNumber,
+      age: visits.age,
+      mutuelle: visits.mutuelle,
+      mutuelleRemplie: visits.mutuelleRemplie,
+      arrivalTime: visits.arrivalTime,
+      condition: visits.condition,
+      status: visits.status,
+      price: visits.price,
+      nextStep: visits.nextStep,
+      lastUpdatedBy: visits.lastUpdatedBy,
+      visitDate: visits.visitDate,
+      lastUpdatedByName: users.name
+    })
+    .from(visits)
+    .leftJoin(users, eq(visits.lastUpdatedBy, users.id));
 
     if (options?.date) {
       query = query.where(eq(visits.visitDate, options.date)) as any;
@@ -60,7 +77,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Default order by arrival time
-    return await query.orderBy(desc(visits.arrivalTime));
+    return await query.orderBy(desc(visits.arrivalTime)) as any;
   }
 
   async getVisit(id: number): Promise<Visit | undefined> {
