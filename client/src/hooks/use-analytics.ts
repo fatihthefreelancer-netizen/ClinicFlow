@@ -17,6 +17,6 @@ export function useAnalytics(dateRange: { startDate: string; endDate: string }) 
       return api.analytics.get.responses[200].parse(data);
     },
     retry: 1,
-    staleTime: 30000,
+    staleTime: 5000,
   });
 }

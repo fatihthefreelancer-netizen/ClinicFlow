@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
-import { type InsertVisit, type Visit } from "@shared/schema";
+import { type InsertVisit } from "@shared/schema";
 
 export function useVisits(params?: { date?: string; startDate?: string; endDate?: string }) {
   const queryParams = params ? new URLSearchParams(params as any).toString() : "";
@@ -37,7 +37,10 @@ export function useCreateVisit() {
       return api.visits.create.responses[201].parse(await res.json());
     },
     // We invalidate queries, but we also rely on WebSocket for instant updates
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.visits.list.path] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.visits.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.analytics.get.path] });
+    },
   });
 }
 
@@ -55,7 +58,10 @@ export function useUpdateVisit() {
       if (!res.ok) throw new Error("Failed to update visit");
       return api.visits.update.responses[200].parse(await res.json());
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.visits.list.path] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.visits.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.analytics.get.path] });
+    },
   });
 }
 
@@ -70,6 +76,9 @@ export function useDeleteVisit() {
       });
       if (!res.ok) throw new Error("Failed to delete visit");
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: [api.visits.list.path] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [api.visits.list.path] });
+      queryClient.invalidateQueries({ queryKey: [api.analytics.get.path] });
+    },
   });
 }

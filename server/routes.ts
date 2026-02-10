@@ -28,8 +28,7 @@ export async function registerRoutes(
   };
 
   wss.on("connection", (ws) => {
-    console.log("Client connected");
-    ws.on("close", () => console.log("Client disconnected"));
+    ws.on("close", () => {});
   });
 
   app.get(api.auth.me.path, isAuthenticated, async (req: any, res) => {

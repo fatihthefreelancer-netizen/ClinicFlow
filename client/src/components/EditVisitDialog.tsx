@@ -86,8 +86,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
       
       await updateVisit({ id: visit.id, ...payload });
       onOpenChange(false);
-    } catch (error) {
-      console.error(error);
+    } catch {
     }
   }
 
@@ -96,8 +95,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
     try {
       await deleteVisit(visit.id);
       onOpenChange(false);
-    } catch (error) {
-      console.error(error);
+    } catch {
     }
   };
 

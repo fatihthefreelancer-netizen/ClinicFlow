@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ws, api, type Visit } from "@shared/routes";
-import { z } from "zod";
+import { ws, api } from "@shared/routes";
+import type { Visit } from "@shared/schema";
 
 export function useWebSocket() {
   const queryClient = useQueryClient();
@@ -21,29 +21,32 @@ export function useWebSocket() {
         try {
           const message = JSON.parse(event.data);
           
-          // Handle Visit Update
+          const invalidateAnalytics = () => {
+            queryClient.invalidateQueries({ queryKey: [api.analytics.get.path] });
+          };
+
           const updateResult = ws.receive.visitUpdate.safeParse(message);
           if (updateResult.success) {
             updateVisitInCache(updateResult.data.data);
+            invalidateAnalytics();
             return;
           }
 
-          // Handle Visit Create
           const createResult = ws.receive.visitCreate.safeParse(message);
           if (createResult.success) {
             addVisitToCache(createResult.data.data);
+            invalidateAnalytics();
             return;
           }
 
-          // Handle Visit Delete
           const deleteResult = ws.receive.visitDelete.safeParse(message);
           if (deleteResult.success) {
             removeVisitFromCache(deleteResult.data.id);
+            invalidateAnalytics();
             return;
           }
 
-        } catch (err) {
-          console.error("Failed to parse WS message", err);
+        } catch {
         }
       };
 

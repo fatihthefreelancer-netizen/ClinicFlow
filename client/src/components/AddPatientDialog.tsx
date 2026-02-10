@@ -89,8 +89,7 @@ export function AddPatientDialog() {
       });
       setOpen(false);
       form.reset();
-    } catch (error) {
-      console.error(error);
+    } catch {
     }
   }
 
