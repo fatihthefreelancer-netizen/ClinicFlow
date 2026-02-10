@@ -1,0 +1,105 @@
+Currently, when I delete a patient, the confirmation is handled using a browser-based confirmation or console log prompt (e.g. confirm(), alert(), or console-driven logic).
+I do not want any browser-native dialogs anymore.
+
+What I want instead:
+
+A custom in-app confirmation modal
+
+The modal must:
+
+Follow the app’s design system (colors, typography, spacing, buttons)
+
+Be consistent with other UI components
+
+Appear inside the app (not browser UI)
+
+The modal should clearly ask for confirmation before deleting a patient
+
+It must include:
+
+A clear warning message (e.g. “This action is irreversible”)
+
+A primary action button (Confirm / Delete)
+
+A secondary action button (Cancel)
+
+The patient is deleted only after explicit confirmation
+
+Important rule (global):
+👉 From now on, any confirmation, alert, warning, or pop-up in the entire app must be implemented as an in-app modal or component, never using browser-native dialogs (alert, confirm, prompt) or console-based interactions.
+
+If relevant, centralize this logic into:
+
+A reusable ConfirmationModal component
+
+Or a global modal system / UI state manager
+
+2️⃣ Fix patient edit & save functionality
+
+There is currently an issue when editing a patient:
+
+Doctors can modify patient data in the UI
+
+But the changes are not persisted
+
+When refreshing or reopening the record, the old data remains
+
+What I want you to do:
+
+Identify why the modifications are not being saved:
+
+Missing state updates
+
+Incorrect form handling
+
+API request not firing
+
+API request failing silently
+
+Backend update logic missing or incorrect
+
+Ensure that:
+
+Edited fields are correctly stored in local state
+
+Changes are sent to the backend on save
+
+The backend updates the patient record correctly
+
+The UI reflects the updated data immediately after save
+
+Add proper error handling:
+
+Show an in-app error message if saving fails
+
+Show a success feedback (toast, modal, or inline message) when saving succeeds
+
+3️⃣ UX & consistency requirements (very important)
+
+No browser-native UI elements for confirmations or alerts
+
+No console-based confirmations
+
+All user feedback must be visible inside the app UI
+
+Follow existing design patterns (buttons, modals, spacing)
+
+Keep the experience intuitive for doctors using the app in real-time
+
+4️⃣ Expected output
+
+I expect you to:
+
+Explain what you changed and why
+
+Show or describe:
+
+The new confirmation modal logic
+
+How deletion is now handled
+
+How patient edits are saved correctly
+
+Flag any assumptions you had to make
+
+Suggest improvements if you notice UX or architectural issues

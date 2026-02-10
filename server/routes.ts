@@ -81,20 +81,16 @@ export async function registerRoutes(
   app.put(api.visits.update.path, isAuthenticated, async (req: any, res) => {
     try {
       const id = Number(req.params.id);
-      const userId = req.session.user.id;
-      
       const input = api.visits.update.input.parse(req.body);
-      const updateData = { ...input, lastUpdatedBy: userId };
-      
-      const visit = await storage.updateVisit(id, updateData);
+      const visit = await storage.updateVisit(id, input);
       
       broadcast({ type: "UPDATE", data: visit });
       res.json(visit);
-    } catch (err) {
+    } catch (err: any) {
         if (err instanceof z.ZodError) {
             res.status(400).json({ message: err.errors[0].message });
         } else {
-            res.status(500).json({ message: "Internal server error" });
+            res.status(500).json({ message: err?.message || "Internal server error" });
         }
     }
   });

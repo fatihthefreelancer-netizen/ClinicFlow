@@ -31,6 +31,7 @@ import {
 import { Plus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
 
 // Helper schema for the form since some fields are auto-generated/defaults
 const formSchema = insertVisitSchema.pick({
@@ -58,6 +59,7 @@ type FormValues = z.infer<typeof formSchema>;
 export function AddPatientDialog() {
   const [open, setOpen] = useState(false);
   const { mutateAsync: createVisit, isPending } = useCreateVisit();
+  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -85,11 +87,20 @@ export function AddPatientDialog() {
     try {
       await createVisit({
         ...data,
-        status: "waiting", // Default status
+        status: "waiting",
+      });
+      toast({
+        title: "Patient ajouté",
+        description: "Le patient a été ajouté à la file d'attente.",
       });
       setOpen(false);
       form.reset();
     } catch {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter le patient. Veuillez réessayer.",
+        variant: "destructive",
+      });
     }
   }
 
