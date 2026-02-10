@@ -10,6 +10,45 @@ The application is built as a full-stack TypeScript project with a React fronten
 
 Preferred communication style: Simple, everyday language.
 
+## CRITICAL DATA SAFETY RULES
+This application uses real medical data.
+The AI agent must NEVER modify, reset, seed, mock, or delete any database records.
+
+### Database access rules
+- The AI is allowed to:
+    - READ data
+    - QUERY data
+    - AGGREGATE data for statistics and dashboards
+- The AI is strictly FORBIDDEN to:
+    - Insert patients automatically
+    - Delete any patient records
+    - Update existing patient records
+    - Reset or recreate the database
+    - Replace existing data with new data
+    - Seed or mock patients for testing
+
+### Patient creation rules
+- Patients can ONLY be created by:
+    - a doctor
+    - or an assistant
+- The system must NEVER auto-create patients.
+
+### Daily workflow logic
+- Each patient belongs to a specific date.
+- Each day starts with an empty patient list.
+- During the day, doctors or assistants may:
+    - add
+    - edit
+    - delete patients
+- When a new day starts:
+    - the previous day's data remains accessible
+    - previous data is immutable
+    - a new empty day is created if it does not exist
+
+### Absolute rule
+If a feature requires modifying database content automatically, DO NOT IMPLEMENT IT.
+Ask for explicit confirmation instead.
+
 ## System Architecture
 
 ### Frontend Architecture

@@ -7,7 +7,8 @@ import {
   LogOut, 
   User,
   Menu,
-  Stethoscope
+  Stethoscope,
+  LifeBuoy
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       icon: LayoutDashboard,
       active: location === "/dashboard",
     }] : []),
+    {
+      href: "/support",
+      label: "Contacter Support",
+      icon: LifeBuoy,
+      active: location === "/support",
+    },
   ];
 
   const NavContent = (

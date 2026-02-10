@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import LiveBoard from "@/pages/LiveBoard";
 import Dashboard from "@/pages/Dashboard";
+import Support from "@/pages/Support";
 import Login from "@/pages/Login";
 
 function Router() {
@@ -29,6 +30,7 @@ function Router() {
     <Switch>
       <Route path="/" component={LiveBoard} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/support" component={Support} />
       <Route component={NotFound} />
     </Switch>
   );
