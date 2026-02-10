@@ -25,7 +25,7 @@ export interface IStorage {
     totalPatients: number;
     totalRevenue: number;
     averagePrice: number;
-    patientsPerDay: { date: string; count: number }[];
+    patientsPerDay: { date: string; total: number; mutuelle: number; mutuelleRemplie: number }[];
   }>;
 }
 
@@ -60,7 +60,7 @@ export class DatabaseStorage implements IStorage {
       nextStep: visits.nextStep,
       lastUpdatedBy: visits.lastUpdatedBy,
       visitDate: visits.visitDate,
-      lastUpdatedByName: users.name
+      lastUpdatedByName: users.firstName
     })
     .from(visits)
     .leftJoin(users, eq(visits.lastUpdatedBy, users.id));

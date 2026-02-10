@@ -97,7 +97,9 @@ export const api = {
           averagePrice: z.number(),
           patientsPerDay: z.array(z.object({
             date: z.string(),
-            count: z.number(),
+            total: z.number(),
+            mutuelle: z.number(),
+            mutuelleRemplie: z.number(),
           })),
         }),
         403: errorSchemas.unauthorized,
