@@ -21,8 +21,8 @@ export default function Support() {
 
         <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
           <CardContent className="p-8 text-center flex flex-col items-center">
-            <div className="bg-green-100 p-4 rounded-full mb-6">
-              <MessageCircle className="h-12 w-12 text-green-600" />
+            <div className="bg-blue-100 p-4 rounded-full mb-6">
+              <MessageCircle className="h-12 w-12 text-blue-600" />
             </div>
             
             <p className="text-slate-500 mb-8">
@@ -37,7 +37,7 @@ export default function Support() {
             >
               <Button 
                 size="lg" 
-                className="bg-green-600 hover:bg-green-700 text-white rounded-xl px-8 h-14 text-lg font-medium shadow-lg shadow-green-500/20 w-full"
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-8 h-14 text-lg font-medium shadow-lg shadow-blue-500/20 w-full"
               >
                 <MessageCircle className="w-6 h-6 mr-3" />
                 Contacter nous sur WhatsApp

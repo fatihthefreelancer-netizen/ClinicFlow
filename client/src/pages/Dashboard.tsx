@@ -60,19 +60,28 @@ export default function Dashboard() {
   }, [currentMonthVisits, todayDate]);
 
   const { data: analytics } = useAnalytics({ 
-    startDate: subDays(todayDate, 30).toISOString(), 
+    startDate: subDays(todayDate, 6).toISOString(), 
     endDate: todayDate.toISOString() 
   });
 
   const chartData = useMemo(() => {
-    if (!analytics?.patientsPerDay) return [];
-    return analytics.patientsPerDay.map(d => ({
-      day: format(new Date(d.date), "dd MMM", { locale: fr }),
-      total: (d as any).total,
-      mutuelle: (d as any).mutuelle,
-      mutuelleRemplie: (d as any).mutuelleRemplie
-    }));
-  }, [analytics]);
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = subDays(todayDate, i);
+      const dateStr = format(d, "yyyy-MM-dd");
+      const dayLabel = format(d, "dd MMM", { locale: fr });
+      
+      const stat = analytics?.patientsPerDay?.find(p => p.date === dateStr);
+      
+      days.push({
+        day: dayLabel,
+        total: stat ? (stat as any).total : 0,
+        mutuelle: stat ? (stat as any).mutuelle : 0,
+        mutuelleRemplie: stat ? (stat as any).mutuelleRemplie : 0
+      });
+    }
+    return days;
+  }, [analytics, todayDate]);
 
   return (
     <Layout>
