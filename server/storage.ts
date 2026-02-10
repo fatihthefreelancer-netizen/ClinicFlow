@@ -105,6 +105,8 @@ export class DatabaseStorage implements IStorage {
 
   async getAnalytics(startDate: string, endDate: string) {
     try {
+      const validStatuses = ["waiting", "in_consultation", "done"];
+      
       const result = await db
         .select({
           count: sql<number>`count(*)`,
@@ -115,7 +117,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             gte(visits.visitDate, startDate),
-            lte(visits.visitDate, endDate)
+            lte(visits.visitDate, endDate),
+            sql`${visits.status} IN ('waiting', 'in_consultation', 'done')`
           )
         );
 
@@ -124,13 +127,16 @@ export class DatabaseStorage implements IStorage {
       const dailyStats = await db
         .select({
           date: visits.visitDate,
-          count: sql<number>`count(*)`,
+          total: sql<number>`count(*)`,
+          mutuelle: sql<number>`count(*) filter (where ${visits.mutuelle} = 'Oui')`,
+          mutuelleRemplie: sql<number>`count(*) filter (where ${visits.mutuelle} = 'Oui' and ${visits.mutuelleRemplie} = 'Oui')`,
         })
         .from(visits)
         .where(
           and(
             gte(visits.visitDate, startDate),
-            lte(visits.visitDate, endDate)
+            lte(visits.visitDate, endDate),
+            sql`${visits.status} IN ('waiting', 'in_consultation', 'done')`
           )
         )
         .groupBy(visits.visitDate)
@@ -142,7 +148,9 @@ export class DatabaseStorage implements IStorage {
         averagePrice: Number(stats.avgPrice || 0),
         patientsPerDay: dailyStats.map(d => ({
           date: String(d.date),
-          count: Number(d.count)
+          total: Number(d.total),
+          mutuelle: Number(d.mutuelle),
+          mutuelleRemplie: Number(d.mutuelleRemplie)
         }))
       };
     } catch (error) {

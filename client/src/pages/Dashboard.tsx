@@ -65,20 +65,12 @@ export default function Dashboard() {
   });
 
   const chartData = useMemo(() => {
-    if (!analytics?.patientsPerDay) return [
-      { day: "01 Feb", total: 12, mutuelle: 5, mutuelleRemplie: 3 },
-      { day: "02 Feb", total: 15, mutuelle: 7, mutuelleRemplie: 4 },
-      { day: "03 Feb", total: 10, mutuelle: 4, mutuelleRemplie: 2 },
-      { day: "04 Feb", total: 18, mutuelle: 9, mutuelleRemplie: 6 },
-      { day: "05 Feb", total: 20, mutuelle: 11, mutuelleRemplie: 7 },
-      { day: "06 Feb", total: 16, mutuelle: 8, mutuelleRemplie: 5 },
-      { day: "07 Feb", total: 22, mutuelle: 13, mutuelleRemplie: 9 },
-    ];
+    if (!analytics?.patientsPerDay) return [];
     return analytics.patientsPerDay.map(d => ({
-      day: format(new Date(d.date), "dd MMM"),
-      total: d.count,
-      mutuelle: Math.round(d.count * 0.4),
-      mutuelleRemplie: Math.round(d.count * 0.2)
+      day: format(new Date(d.date), "dd MMM", { locale: fr }),
+      total: (d as any).total,
+      mutuelle: (d as any).mutuelle,
+      mutuelleRemplie: (d as any).mutuelleRemplie
     }));
   }, [analytics]);
 
