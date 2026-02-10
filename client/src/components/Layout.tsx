@@ -27,12 +27,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
       icon: Activity,
       active: location === "/",
     },
-    ...(role === "doctor" ? [{
+    {
       href: "/dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
       active: location === "/dashboard",
-    }] : []),
+    },
     {
       href: "/support",
       label: "Contacter Support",

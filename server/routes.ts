@@ -14,25 +14,9 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Setup Replit Auth
   await setupAuth(app);
   registerAuthRoutes(app);
 
-  // === SEED DATA REMOVED ===
-  app.use(async (req: any, res, next) => {
-    if (req.isAuthenticated() && req.user?.claims?.sub) {
-      const userId = req.user.claims.sub;
-      const existingProfile = await storage.getProfile(userId);
-      if (!existingProfile) {
-        const allProfiles = await db.select().from(profiles);
-        const role = allProfiles.length === 0 ? "doctor" : "assistant";
-        await storage.createProfile({ userId, role });
-      }
-    }
-    next();
-  });
-
-  // === WEBSOCKET SETUP ===
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
 
   const broadcast = (message: any) => {
@@ -48,13 +32,11 @@ export async function registerRoutes(
     ws.on("close", () => console.log("Client disconnected"));
   });
 
-  // === API ROUTES ===
   app.get(api.auth.me.path, isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
-    const profile = await storage.getProfile(userId);
+    const user = req.session.user;
     res.json({
-      user: req.user,
-      role: profile?.role || "assistant",
+      user: { claims: { sub: user.id, first_name: user.firstName, last_name: user.lastName } },
+      role: user.role,
     });
   });
 
@@ -100,7 +82,7 @@ export async function registerRoutes(
   app.put(api.visits.update.path, isAuthenticated, async (req: any, res) => {
     try {
       const id = Number(req.params.id);
-      const userId = req.user.claims.sub;
+      const userId = req.session.user.id;
       
       const input = api.visits.update.input.parse(req.body);
       const updateData = { ...input, lastUpdatedBy: userId };
@@ -127,13 +109,6 @@ export async function registerRoutes(
   });
 
   app.get(api.analytics.get.path, isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
-    const profile = await storage.getProfile(userId);
-    
-    if (profile?.role !== 'doctor') {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
       return res.status(400).json({ message: "Start and End date required" });
@@ -146,15 +121,7 @@ export async function registerRoutes(
     res.json(stats);
   });
 
-  // Export CSV
   app.get("/api/export", isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
-    const profile = await storage.getProfile(userId);
-    
-    if (profile?.role !== 'doctor') {
-      return res.status(403).json({ message: "Unauthorized" });
-    }
-
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
       return res.status(400).json({ message: "Start and End date required" });
