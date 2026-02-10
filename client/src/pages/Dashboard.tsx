@@ -16,11 +16,11 @@ import { useWebSocket } from "@/hooks/use-websocket";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { format, subDays, startOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 export default function Dashboard() {
   useWebSocket();
-  const todayDate = new Date();
+  const [todayDate] = useState(() => new Date());
   const todayStr = format(todayDate, "yyyy-MM-dd");
   const monthStart = startOfMonth(todayDate);
   const monthStartStr = format(monthStart, "yyyy-MM-dd");
@@ -59,9 +59,10 @@ export default function Dashboard() {
     };
   }, [currentMonthVisits, todayDate]);
 
+  const chartStartStr = format(subDays(todayDate, 6), "yyyy-MM-dd");
   const { data: analytics } = useAnalytics({ 
-    startDate: subDays(todayDate, 6).toISOString(), 
-    endDate: todayDate.toISOString() 
+    startDate: chartStartStr, 
+    endDate: todayStr 
   });
 
   const chartData = useMemo(() => {
@@ -75,9 +76,9 @@ export default function Dashboard() {
       
       days.push({
         day: dayLabel,
-        total: stat ? (stat as any).total : 0,
-        mutuelle: stat ? (stat as any).mutuelle : 0,
-        mutuelleRemplie: stat ? (stat as any).mutuelleRemplie : 0
+        total: stat?.total ?? 0,
+        mutuelle: stat?.mutuelle ?? 0,
+        mutuelleRemplie: stat?.mutuelleRemplie ?? 0
       });
     }
     return days;
