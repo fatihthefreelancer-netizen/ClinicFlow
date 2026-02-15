@@ -2,13 +2,16 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ws, api } from "@shared/routes";
 import type { Visit } from "@shared/schema";
+import { useAuth } from "./use-auth";
 
 export function useWebSocket() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    // Determine WS protocol based on current page protocol
+    if (!user?.id) return;
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
     const url = `${protocol}//${host}/ws`;
@@ -16,6 +19,10 @@ export function useWebSocket() {
     const connect = () => {
       const socket = new WebSocket(url);
       socketRef.current = socket;
+
+      socket.onopen = () => {
+        socket.send(JSON.stringify({ type: "AUTH", accountId: user.id }));
+      };
 
       socket.onmessage = (event) => {
         try {
@@ -51,7 +58,6 @@ export function useWebSocket() {
       };
 
       socket.onclose = () => {
-        // Simple reconnect logic with delay
         setTimeout(connect, 3000);
       };
     };
@@ -63,9 +69,8 @@ export function useWebSocket() {
         socketRef.current.close();
       }
     };
-  }, [queryClient]);
+  }, [queryClient, user?.id]);
 
-  // Helper to optimistically update cache
   const updateVisitInCache = (updatedVisit: Visit) => {
     queryClient.setQueriesData({ queryKey: [api.visits.list.path] }, (oldData: Visit[] | undefined) => {
       if (!oldData) return [updatedVisit];
@@ -76,7 +81,6 @@ export function useWebSocket() {
   const addVisitToCache = (newVisit: Visit) => {
     queryClient.setQueriesData({ queryKey: [api.visits.list.path] }, (oldData: Visit[] | undefined) => {
       if (!oldData) return [newVisit];
-      // Check if already exists to prevent duplicates
       if (oldData.some(v => v.id === newVisit.id)) return oldData;
       return [...oldData, newVisit];
     });

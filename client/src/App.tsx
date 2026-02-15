@@ -10,6 +10,10 @@ import LiveBoard from "@/pages/LiveBoard";
 import Dashboard from "@/pages/Dashboard";
 import Support from "@/pages/Support";
 import Login from "@/pages/Login";
+import SignUp from "@/pages/SignUp";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ResetPassword from "@/pages/ResetPassword";
+import VerifyEmail from "@/pages/VerifyEmail";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -22,15 +26,22 @@ function Router() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
   return (
     <Switch>
-      <Route path="/" component={LiveBoard} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/support" component={Support} />
+      <Route path="/signup" component={SignUp} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/verify-email" component={VerifyEmail} />
+      <Route path="/login" component={Login} />
+      {isAuthenticated ? (
+        <>
+          <Route path="/" component={LiveBoard} />
+          <Route path="/dashboard" component={Dashboard} />
+          <Route path="/support" component={Support} />
+        </>
+      ) : (
+        <Route path="/" component={Login} />
+      )}
       <Route component={NotFound} />
     </Switch>
   );

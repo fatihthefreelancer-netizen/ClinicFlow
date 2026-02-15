@@ -1,7 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { User } from "@shared/models/auth";
 
-async function fetchUser(): Promise<User | null> {
+interface AuthUser {
+  id: string;
+  email: string;
+  clinicName: string | null;
+}
+
+async function fetchUser(): Promise<AuthUser | null> {
   const response = await fetch("/api/auth/user", {
     credentials: "include",
   });
@@ -19,7 +24,7 @@ async function fetchUser(): Promise<User | null> {
 
 export function useAuth() {
   const queryClient = useQueryClient();
-  const { data: user, isLoading } = useQuery<User | null>({
+  const { data: user, isLoading } = useQuery<AuthUser | null>({
     queryKey: ["/api/auth/user"],
     queryFn: fetchUser,
     retry: false,
@@ -27,8 +32,8 @@ export function useAuth() {
   });
 
   const loginMutation = useMutation({
-    mutationFn: async (credentials: { username: string; password: string }) => {
-      const res = await fetch("/api/login", {
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(credentials),
@@ -45,12 +50,29 @@ export function useAuth() {
     },
   });
 
+  const signupMutation = useMutation({
+    mutationFn: async (data: { email: string; password: string; clinicName?: string }) => {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.message || "Erreur d'inscription");
+      }
+      return result;
+    },
+  });
+
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      window.location.href = "/api/logout";
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);
+      queryClient.clear();
     },
   });
 
@@ -61,6 +83,9 @@ export function useAuth() {
     login: loginMutation.mutate,
     isLoggingIn: loginMutation.isPending,
     loginError: loginMutation.error?.message ?? null,
+    signup: signupMutation.mutateAsync,
+    isSigningUp: signupMutation.isPending,
+    signupError: signupMutation.error?.message ?? null,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
   };

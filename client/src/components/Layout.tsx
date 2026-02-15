@@ -1,5 +1,4 @@
 import { Link, useLocation } from "wouter";
-import { useProfile } from "@/hooks/use-profile";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   LayoutDashboard, 
@@ -16,8 +15,7 @@ import { useState } from "react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const { user, role } = useProfile();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
@@ -40,6 +38,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       active: location === "/support",
     },
   ];
+
+  const displayName = user?.clinicName || user?.email || "Utilisateur";
 
   const NavContent = (
     <div className="flex flex-col h-full bg-slate-900 text-white">
@@ -73,23 +73,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="p-4 border-t border-slate-800 bg-slate-950/50">
         <div className="flex items-center gap-3 px-4 py-3 mb-2">
           <div className="h-10 w-10 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
-            {user?.profileImageUrl ? (
-              <img src={user.profileImageUrl} alt="Profile" className="h-10 w-10 rounded-full" />
-            ) : (
-              <User className="h-5 w-5 text-slate-400" />
-            )}
+            <User className="h-5 w-5 text-slate-400" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate text-white">
-              {user?.firstName} {user?.lastName}
+            <p className="text-sm font-medium truncate text-white" data-testid="text-user-name">
+              {displayName}
             </p>
-            <p className="text-xs text-slate-500 truncate capitalize">{role}</p>
+            <p className="text-xs text-slate-500 truncate" data-testid="text-user-email">{user?.email}</p>
           </div>
         </div>
         <Button 
           variant="ghost" 
           className="w-full justify-start text-slate-400 hover:text-red-400 hover:bg-red-950/30"
           onClick={() => logout()}
+          data-testid="button-logout"
         >
           <LogOut className="mr-2 h-4 w-4" />
           Déconnexion
@@ -100,12 +97,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Desktop Sidebar */}
       <div className="hidden md:block w-64 shrink-0 fixed inset-y-0 left-0 border-r z-20">
         {NavContent}
       </div>
 
-      {/* Mobile Trigger */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b z-20 px-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="bg-primary p-1.5 rounded-md">
@@ -125,7 +120,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </Sheet>
       </div>
 
-      {/* Main Content */}
       <main className="flex-1 md:ml-64 w-full pt-16 md:pt-0 min-h-screen bg-slate-50/50">
         {children}
       </main>

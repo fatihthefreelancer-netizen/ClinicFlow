@@ -5,23 +5,19 @@ import {
   type User, type Profile, type InsertProfile,
   type Visit, type InsertVisit, type UpdateVisitRequest
 } from "@shared/schema";
-import { authStorage } from "./replit_integrations/auth/storage";
 
 export interface IStorage {
-  // Auth & Profile
   getUser(id: string): Promise<User | undefined>;
   getProfile(userId: string): Promise<Profile | undefined>;
   createProfile(profile: InsertProfile): Promise<Profile>;
   
-  // Visits
-  getVisits(options?: { date?: string; startDate?: string; endDate?: string }): Promise<Visit[]>;
+  getVisits(options?: { date?: string; startDate?: string; endDate?: string; accountId?: string }): Promise<Visit[]>;
   getVisit(id: number): Promise<Visit | undefined>;
-  createVisit(visit: InsertVisit): Promise<Visit>;
+  createVisit(visit: InsertVisit & { accountId: string }): Promise<Visit>;
   updateVisit(id: number, visit: UpdateVisitRequest): Promise<Visit>;
   deleteVisit(id: number): Promise<void>;
   
-  // Analytics
-  getAnalytics(startDate: string, endDate: string): Promise<{
+  getAnalytics(startDate: string, endDate: string, accountId?: string): Promise<{
     totalPatients: number;
     totalRevenue: number;
     averagePrice: number;
@@ -30,9 +26,9 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // Delegate user methods to authStorage or implement directly
   async getUser(id: string): Promise<User | undefined> {
-    return authStorage.getUser(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getProfile(userId: string): Promise<Profile | undefined> {
@@ -45,39 +41,23 @@ export class DatabaseStorage implements IStorage {
     return newProfile;
   }
 
-  async getVisits(options?: { date?: string; startDate?: string; endDate?: string }): Promise<Visit[]> {
-    let query = db.select({
-      id: visits.id,
-      patientName: visits.patientName,
-      phoneNumber: visits.phoneNumber,
-      age: visits.age,
-      mutuelle: visits.mutuelle,
-      mutuelleRemplie: visits.mutuelleRemplie,
-      arrivalTime: visits.arrivalTime,
-      condition: visits.condition,
-      status: visits.status,
-      price: visits.price,
-      nextStep: visits.nextStep,
-      lastUpdatedBy: visits.lastUpdatedBy,
-      visitDate: visits.visitDate,
-      lastUpdatedByName: users.firstName
-    })
-    .from(visits)
-    .leftJoin(users, eq(visits.lastUpdatedBy, users.id));
+  async getVisits(options?: { date?: string; startDate?: string; endDate?: string; accountId?: string }): Promise<Visit[]> {
+    const conditions = [];
 
-    if (options?.date) {
-      query = query.where(eq(visits.visitDate, options.date)) as any;
-    } else if (options?.startDate && options?.endDate) {
-      query = query.where(
-        and(
-          gte(visits.visitDate, options.startDate),
-          lte(visits.visitDate, options.endDate)
-        )
-      ) as any;
+    if (options?.accountId) {
+      conditions.push(eq(visits.accountId, options.accountId));
     }
 
-    // Default order by arrival time
-    return await query.orderBy(desc(visits.arrivalTime)) as any;
+    if (options?.date) {
+      conditions.push(eq(visits.visitDate, options.date));
+    } else if (options?.startDate && options?.endDate) {
+      conditions.push(gte(visits.visitDate, options.startDate));
+      conditions.push(lte(visits.visitDate, options.endDate));
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+    return await db.select().from(visits).where(whereClause).orderBy(desc(visits.arrivalTime));
   }
 
   async getVisit(id: number): Promise<Visit | undefined> {
@@ -85,7 +65,7 @@ export class DatabaseStorage implements IStorage {
     return visit;
   }
 
-  async createVisit(visit: InsertVisit): Promise<Visit> {
+  async createVisit(visit: InsertVisit & { accountId: string }): Promise<Visit> {
     const [newVisit] = await db.insert(visits).values(visit).returning();
     return newVisit;
   }
@@ -103,10 +83,20 @@ export class DatabaseStorage implements IStorage {
     await db.delete(visits).where(eq(visits.id, id));
   }
 
-  async getAnalytics(startDate: string, endDate: string) {
+  async getAnalytics(startDate: string, endDate: string, accountId?: string) {
     try {
       const validStatuses = ["waiting", "in_consultation", "done"];
-      
+
+      const baseConditions = [
+        gte(visits.visitDate, startDate),
+        lte(visits.visitDate, endDate),
+        sql`${visits.status} IN ('waiting', 'in_consultation', 'done')`
+      ];
+
+      if (accountId) {
+        baseConditions.push(eq(visits.accountId, accountId) as any);
+      }
+
       const result = await db
         .select({
           count: sql<number>`count(*)`,
@@ -114,13 +104,7 @@ export class DatabaseStorage implements IStorage {
           avgPrice: sql<number>`avg(${visits.price})`,
         })
         .from(visits)
-        .where(
-          and(
-            gte(visits.visitDate, startDate),
-            lte(visits.visitDate, endDate),
-            sql`${visits.status} IN ('waiting', 'in_consultation', 'done')`
-          )
-        );
+        .where(and(...baseConditions));
 
       const stats = result[0] || { count: 0, revenue: 0, avgPrice: 0 };
 
@@ -132,13 +116,7 @@ export class DatabaseStorage implements IStorage {
           mutuelleRemplie: sql<number>`count(*) filter (where ${visits.mutuelle} = 'Oui' and ${visits.mutuelleRemplie} = 'Oui')`,
         })
         .from(visits)
-        .where(
-          and(
-            gte(visits.visitDate, startDate),
-            lte(visits.visitDate, endDate),
-            sql`${visits.status} IN ('waiting', 'in_consultation', 'done')`
-          )
-        )
+        .where(and(...baseConditions))
         .groupBy(visits.visitDate)
         .orderBy(visits.visitDate);
 
@@ -154,7 +132,6 @@ export class DatabaseStorage implements IStorage {
         }))
       };
     } catch (error) {
-      console.error("Database analytics error:", error);
       throw error;
     }
   }

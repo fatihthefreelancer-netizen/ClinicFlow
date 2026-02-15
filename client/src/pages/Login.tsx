@@ -6,11 +6,12 @@ import { Stethoscope, ShieldCheck, Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { Link } from "wouter";
 
 export default function Login() {
   const { isAuthenticated, isLoading, login, isLoggingIn, loginError } = useAuth();
   const [, setLocation] = useLocation();
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
@@ -24,7 +25,7 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login({ username, password });
+    login({ email, password });
   };
 
   return (
@@ -72,15 +73,15 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleSubmit} className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="username">Nom d'utilisateur</Label>
+                <Label htmlFor="email">Email</Label>
                 <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Nom d'utilisateur"
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="votre@email.com"
                   required
-                  data-testid="input-username"
+                  data-testid="input-email"
                 />
               </div>
               <div className="grid gap-2">
@@ -128,6 +129,15 @@ export default function Login() {
                   "Se connecter"
                 )}
               </Button>
+
+              <div className="flex items-center justify-between text-sm">
+                <Link href="/forgot-password" className="text-primary hover:underline" data-testid="link-forgot-password">
+                  Mot de passe oublié ?
+                </Link>
+                <Link href="/signup" className="text-primary hover:underline" data-testid="link-signup">
+                  Créer un compte
+                </Link>
+              </div>
             </form>
           </CardContent>
         </Card>

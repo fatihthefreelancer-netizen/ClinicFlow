@@ -10,6 +10,8 @@ import { db } from "./db";
 import { visits, profiles, users } from "@shared/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
 
+const accountConnections = new Map<string, Set<WebSocket>>();
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
@@ -19,29 +21,56 @@ export async function registerRoutes(
 
   const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
 
-  const broadcast = (message: any) => {
-    wss.clients.forEach((client) => {
+  const broadcast = (accountId: string, message: any) => {
+    const connections = accountConnections.get(accountId);
+    if (!connections) return;
+    const data = JSON.stringify(message);
+    connections.forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(message));
+        client.send(data);
       }
     });
   };
 
-  wss.on("connection", (ws) => {
-    ws.on("close", () => {});
-  });
+  wss.on("connection", (ws, req) => {
+    let wsAccountId: string | null = null;
 
-  app.get(api.auth.me.path, isAuthenticated, async (req: any, res) => {
-    const user = req.session.user;
-    res.json({
-      user: { claims: { sub: user.id, first_name: user.firstName, last_name: user.lastName } },
-      role: user.role,
+    ws.on("message", (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+        if (msg.type === "AUTH" && msg.accountId) {
+          wsAccountId = msg.accountId;
+          if (!accountConnections.has(wsAccountId!)) {
+            accountConnections.set(wsAccountId!, new Set());
+          }
+          accountConnections.get(wsAccountId!)!.add(ws);
+        }
+      } catch {}
+    });
+
+    ws.on("close", () => {
+      if (wsAccountId) {
+        const conns = accountConnections.get(wsAccountId);
+        if (conns) {
+          conns.delete(ws);
+          if (conns.size === 0) accountConnections.delete(wsAccountId);
+        }
+      }
     });
   });
 
-  app.get(api.visits.list.path, isAuthenticated, async (req, res) => {
+  app.get(api.auth.me.path, isAuthenticated, async (req: any, res) => {
+    const account = req.session.account;
+    res.json({
+      user: { claims: { sub: account.id, email: account.email } },
+      clinicName: account.clinicName,
+    });
+  });
+
+  app.get(api.visits.list.path, isAuthenticated, async (req: any, res) => {
+    const accountId = req.session.account.id;
     const { date: queryDate, range, startDate, endDate } = req.query;
-    let filters: any = {};
+    let filters: any = { accountId };
     
     if (range === 'today' || (!range && !queryDate && !startDate)) {
       filters.date = format(new Date(), 'yyyy-MM-dd');
@@ -56,18 +85,22 @@ export async function registerRoutes(
     res.json(result);
   });
 
-  app.get(api.visits.get.path, isAuthenticated, async (req, res) => {
+  app.get(api.visits.get.path, isAuthenticated, async (req: any, res) => {
+    const accountId = req.session.account.id;
     const visit = await storage.getVisit(Number(req.params.id));
-    if (!visit) return res.status(404).json({ message: "Visit not found" });
+    if (!visit || visit.accountId !== accountId) {
+      return res.status(404).json({ message: "Visit not found" });
+    }
     res.json(visit);
   });
 
-  app.post(api.visits.create.path, isAuthenticated, async (req, res) => {
+  app.post(api.visits.create.path, isAuthenticated, async (req: any, res) => {
     try {
+      const accountId = req.session.account.id;
       const input = api.visits.create.input.parse(req.body);
-      const visit = await storage.createVisit(input);
+      const visit = await storage.createVisit({ ...input, accountId });
       
-      broadcast({ type: "CREATE", data: visit });
+      broadcast(accountId, { type: "CREATE", data: visit });
       res.status(201).json(visit);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -80,11 +113,18 @@ export async function registerRoutes(
 
   app.put(api.visits.update.path, isAuthenticated, async (req: any, res) => {
     try {
+      const accountId = req.session.account.id;
       const id = Number(req.params.id);
+
+      const existing = await storage.getVisit(id);
+      if (!existing || existing.accountId !== accountId) {
+        return res.status(404).json({ message: "Visit not found" });
+      }
+
       const input = api.visits.update.input.parse(req.body);
       const visit = await storage.updateVisit(id, input);
       
-      broadcast({ type: "UPDATE", data: visit });
+      broadcast(accountId, { type: "UPDATE", data: visit });
       res.json(visit);
     } catch (err: any) {
         if (err instanceof z.ZodError) {
@@ -95,15 +135,23 @@ export async function registerRoutes(
     }
   });
 
-  app.delete(api.visits.delete.path, isAuthenticated, async (req, res) => {
+  app.delete(api.visits.delete.path, isAuthenticated, async (req: any, res) => {
+    const accountId = req.session.account.id;
     const id = Number(req.params.id);
+
+    const existing = await storage.getVisit(id);
+    if (!existing || existing.accountId !== accountId) {
+      return res.status(404).json({ message: "Visit not found" });
+    }
+
     await storage.deleteVisit(id);
     
-    broadcast({ type: "DELETE", id });
+    broadcast(accountId, { type: "DELETE", id });
     res.status(204).send();
   });
 
   app.get(api.analytics.get.path, isAuthenticated, async (req: any, res) => {
+    const accountId = req.session.account.id;
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
       return res.status(400).json({ message: "Start and End date required" });
@@ -112,11 +160,12 @@ export async function registerRoutes(
     const formattedStart = format(new Date(String(startDate)), 'yyyy-MM-dd');
     const formattedEnd = format(new Date(String(endDate)), 'yyyy-MM-dd');
 
-    const stats = await storage.getAnalytics(formattedStart, formattedEnd);
+    const stats = await storage.getAnalytics(formattedStart, formattedEnd, accountId);
     res.json(stats);
   });
 
   app.get("/api/export", isAuthenticated, async (req: any, res) => {
+    const accountId = req.session.account.id;
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
       return res.status(400).json({ message: "Start and End date required" });
@@ -125,7 +174,7 @@ export async function registerRoutes(
     const formattedStart = format(new Date(String(startDate)), 'yyyy-MM-dd');
     const formattedEnd = format(new Date(String(endDate)), 'yyyy-MM-dd');
 
-    const data = await storage.getVisits({ startDate: formattedStart, endDate: formattedEnd });
+    const data = await storage.getVisits({ startDate: formattedStart, endDate: formattedEnd, accountId });
     
     let csv = "\uFEFFArrivée,Nom du patient,Âge,Condition,Statut,Mutuelle,Mutuelle Remplie,Prix,Étape Suivante,Date\n";
     data.forEach(v => {

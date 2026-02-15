@@ -1,10 +1,9 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
-import { users } from "./models/auth";
+import { users, accounts } from "./models/auth";
 
-// Export everything from auth
 export * from "./models/auth";
 
 export const profiles = pgTable("profiles", {
@@ -15,6 +14,7 @@ export const profiles = pgTable("profiles", {
 
 export const visits = pgTable("visits", {
   id: serial("id").primaryKey(),
+  accountId: varchar("account_id").references(() => accounts.id),
   patientName: text("patient_name").notNull(),
   phoneNumber: text("phone_number"),
   age: integer("age"),
@@ -23,14 +23,14 @@ export const visits = pgTable("visits", {
   arrivalTime: timestamp("arrival_time", { withTimezone: true }).defaultNow().notNull(),
   condition: text("condition").notNull(),
   status: text("status", { enum: ["waiting", "in_consultation", "done", "left"] }).notNull().default("waiting"),
-  price: integer("price"), // Stored in cents or just raw number
+  price: integer("price"),
   nextStep: text("next_step"),
-  lastUpdatedBy: text("last_updated_by").references(() => users.id), // User ID of who last updated it
-  visitDate: date("visit_date").defaultNow().notNull(), // To easily query by day
+  lastUpdatedBy: text("last_updated_by").references(() => users.id),
+  visitDate: date("visit_date").defaultNow().notNull(),
 });
 
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true });
-export const insertVisitSchema = createInsertSchema(visits).omit({ id: true, arrivalTime: true, visitDate: true });
+export const insertVisitSchema = createInsertSchema(visits).omit({ id: true, arrivalTime: true, visitDate: true, accountId: true });
 
 export type Profile = typeof profiles.$inferSelect;
 export type InsertProfile = z.infer<typeof insertProfileSchema>;
@@ -38,8 +38,7 @@ export type InsertProfile = z.infer<typeof insertProfileSchema>;
 export type Visit = typeof visits.$inferSelect;
 export type InsertVisit = z.infer<typeof insertVisitSchema>;
 
-// API Types
 export type CreateVisitRequest = InsertVisit;
 export type UpdateVisitRequest = Partial<InsertVisit>;
 
-export type VisitResponse = Visit & { lastUpdatedByName?: string }; // Enriched with user name
+export type VisitResponse = Visit & { lastUpdatedByName?: string };
