@@ -46,7 +46,7 @@ export async function setupAuth(app: Express) {
 
   app.post("/api/auth/signup", async (req: any, res) => {
     try {
-      const { email, password, clinicName } = req.body;
+      const { email, password, firstName, lastName } = req.body;
 
       if (!email || !password) {
         return res.status(400).json({ message: "Email et mot de passe requis" });
@@ -65,7 +65,8 @@ export async function setupAuth(app: Express) {
       const [account] = await db.insert(accounts).values({
         email: email.toLowerCase().trim(),
         passwordHash,
-        clinicName: clinicName || null,
+        firstName: firstName || null,
+        lastName: lastName || null,
         verified: false,
       }).returning();
 
@@ -112,7 +113,8 @@ export async function setupAuth(app: Express) {
       req.session.account = {
         id: account.id,
         email: account.email,
-        clinicName: account.clinicName,
+        firstName: account.firstName,
+        lastName: account.lastName,
       };
 
       req.session.save((err: any) => {
@@ -122,7 +124,8 @@ export async function setupAuth(app: Express) {
         res.json({
           id: account.id,
           email: account.email,
-          clinicName: account.clinicName,
+          firstName: account.firstName,
+          lastName: account.lastName,
         });
       });
     } catch (err: any) {

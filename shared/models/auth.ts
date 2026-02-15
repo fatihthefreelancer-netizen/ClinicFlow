@@ -25,7 +25,8 @@ export const accounts = pgTable("accounts", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email").notNull().unique(),
   passwordHash: varchar("password_hash").notNull(),
-  clinicName: varchar("clinic_name"),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
   verified: boolean("verified").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });

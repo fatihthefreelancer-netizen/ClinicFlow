@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 interface AuthUser {
   id: string;
   email: string;
-  clinicName: string | null;
+  firstName: string | null;
+  lastName: string | null;
 }
 
 async function fetchUser(): Promise<AuthUser | null> {
@@ -51,7 +52,7 @@ export function useAuth() {
   });
 
   const signupMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string; clinicName?: string }) => {
+    mutationFn: async (data: { email: string; password: string; firstName?: string; lastName?: string }) => {
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

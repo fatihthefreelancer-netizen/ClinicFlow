@@ -13,7 +13,8 @@ export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [clinicName, setClinicName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -30,6 +31,11 @@ export default function SignUp() {
     e.preventDefault();
     setError(null);
 
+    if (!firstName.trim() || !lastName.trim()) {
+      setError("Le prénom et le nom sont obligatoires");
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError("Les mots de passe ne correspondent pas");
       return;
@@ -41,7 +47,7 @@ export default function SignUp() {
     }
 
     try {
-      await signup({ email, password, clinicName: clinicName || undefined });
+      await signup({ email, password, firstName: firstName.trim(), lastName: lastName.trim() });
       setSuccess(true);
     } catch (err: any) {
       setError(err.message);
@@ -83,20 +89,35 @@ export default function SignUp() {
             <span className="text-xl font-bold">ClinicFlow</span>
           </div>
           <CardTitle className="text-2xl font-bold" data-testid="text-signup-title">Créer un compte</CardTitle>
-          <CardDescription data-testid="text-signup-description">Inscrivez-vous pour commencer à gérer votre clinique</CardDescription>
+          <CardDescription data-testid="text-signup-description">Inscrivez-vous pour commencer à gérer votre cabinet</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="clinicName">Nom de la clinique (optionnel)</Label>
-              <Input
-                id="clinicName"
-                type="text"
-                value={clinicName}
-                onChange={(e) => setClinicName(e.target.value)}
-                placeholder="Ma Clinique"
-                data-testid="input-clinic-name"
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="firstName">Prénom du médecin</Label>
+                <Input
+                  id="firstName"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Prénom"
+                  required
+                  data-testid="input-first-name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="lastName">Nom du médecin</Label>
+                <Input
+                  id="lastName"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Nom"
+                  required
+                  data-testid="input-last-name"
+                />
+              </div>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>

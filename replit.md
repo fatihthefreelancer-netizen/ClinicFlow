@@ -78,7 +78,7 @@ Ask for explicit confirmation instead.
 - **Multi-tenancy**: All data queries are scoped by `account_id` for strict data isolation
 
 ### Database Schema
-- **accounts**: Multi-tenant account table (id UUID, email, password_hash, clinic_name, verified, created_at)
+- **accounts**: Multi-tenant account table (id UUID, email, password_hash, first_name, last_name, verified, created_at)
 - **verification_tokens**: Email verification tokens (account_id FK, token, expires_at)
 - **password_reset_tokens**: Password reset tokens (account_id FK, token, expires_at)
 - **users**: Legacy user table (kept for compatibility) - do not drop

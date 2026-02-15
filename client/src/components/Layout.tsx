@@ -39,7 +39,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
     },
   ];
 
-  const displayName = user?.clinicName || user?.email || "Utilisateur";
+  const displayName = user?.firstName && user?.lastName 
+    ? `Dr. ${user.firstName} ${user.lastName}` 
+    : user?.email || "Utilisateur";
 
   const NavContent = (
     <div className="flex flex-col h-full bg-slate-900 text-white">

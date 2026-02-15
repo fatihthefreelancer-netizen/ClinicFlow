@@ -63,7 +63,8 @@ export async function registerRoutes(
     const account = req.session.account;
     res.json({
       user: { claims: { sub: account.id, email: account.email } },
-      clinicName: account.clinicName,
+      firstName: account.firstName,
+      lastName: account.lastName,
     });
   });
 
