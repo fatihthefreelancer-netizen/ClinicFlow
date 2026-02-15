@@ -1,0 +1,161 @@
+Add a complete multi-account authentication and data isolation system to ClinicFlow.
+
+Objective:
+Transform ClinicFlow into a secure multi-tenant SaaS application where each doctor has one private account, accessed via a single shared login (doctor and assistant use the same credentials).
+
+Authentication System (Email + Password Only)
+
+Implement a classic authentication flow:
+
+Sign-up page
+
+Sign-in page
+
+Email verification required
+
+Password reset system
+
+No Google login
+
+No third-party authentication
+
+Sign-up Flow:
+
+User enters email and password
+
+System creates a new account with a unique account_id
+
+System sends a verification email
+
+Account is activated only after email confirmation
+
+After verification, user can access their private dashboard
+
+Sign-in Flow:
+
+User enters email and password
+
+Credentials are validated securely
+
+User accesses only their own account data
+
+Important:
+
+Each account has only ONE login (one email + one password).
+The doctor may share these credentials with their assistant.
+The same account must be accessible simultaneously from multiple devices.
+Concurrent sessions must be supported.
+
+Password Management
+
+Implement secure password handling:
+
+Passwords must be hashed (bcrypt or equivalent)
+
+No plaintext storage
+
+Secure session management
+
+Add a "Forgot Password" flow:
+
+User enters their email
+
+System sends a password reset email with secure token
+
+User clicks the link
+
+User sets a new password
+
+Token expires after a limited time
+
+Email verification required to confirm password change
+
+Multi-Account Architecture (Strict Data Isolation)
+
+Refactor the application to support multiple completely isolated accounts.
+
+Each new sign-up creates:
+
+A unique account_id
+
+A private data scope linked to that account_id
+
+All application data must be scoped by account_id:
+
+Patients table
+
+Daily statistics
+
+Consultation history
+
+Status (waiting, in consultation, completed)
+
+Financial data
+
+Dashboard counters
+
+Any future features
+
+No data from one account must ever be visible in another account.
+
+Every database query must enforce account isolation.
+
+Example logic rule:
+
+When fetching patients:
+SELECT * FROM patients WHERE account_id = current_user.account_id
+
+No global queries allowed.
+
+Access Control
+
+If a user is not authenticated:
+
+They must be redirected to the login page
+
+They cannot access dashboard routes
+
+All protected routes require authentication middleware
+
+When a doctor opens the public link:
+
+They see a clean authentication page
+
+They can choose:
+
+Sign In
+
+Sign Up
+
+Scalability & Safety
+
+The system must support:
+
+100+ independent accounts
+
+Fully separated data
+
+No data collision
+
+No shared in-memory state between accounts
+
+Clean backend logic
+
+The application must now behave as a proper multi-tenant SaaS platform.
+
+Goal:
+
+ClinicFlow becomes a secure, scalable system where:
+
+Each doctor has one private account
+
+That account is accessed with one shared login
+
+Data is completely isolated
+
+Only people with the credentials can access that account
+
+Password changes are secure and email-verified
+
+Do not break the existing UI.
+Refactor backend logic carefully to introduce account-based isolation.
