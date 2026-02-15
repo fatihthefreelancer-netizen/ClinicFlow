@@ -40,9 +40,48 @@ function getBaseUrl(req: any): string {
   return `${protocol}://${host}`;
 }
 
+async function ensureDefaultAccounts() {
+  const defaultAccounts = [
+    { email: "dr.moutayamine@gmail.com", password: "Hakim@1992", firstName: "Hakim", lastName: "Moutayamine" },
+    { email: "fatihhamza2001@gmail.com", password: "Hamza@2001", firstName: "Hamza", lastName: "Fatih" },
+  ];
+
+  for (const acct of defaultAccounts) {
+    const [existing] = await db.select().from(accounts).where(eq(accounts.email, acct.email));
+    if (!existing) {
+      const passwordHash = await bcrypt.hash(acct.password, 12);
+      await db.insert(accounts).values({
+        email: acct.email,
+        passwordHash,
+        firstName: acct.firstName,
+        lastName: acct.lastName,
+        verified: true,
+      });
+      console.log(`Created account: ${acct.email}`);
+    } else {
+      const valid = await bcrypt.compare(acct.password, existing.passwordHash);
+      if (!valid) {
+        const passwordHash = await bcrypt.hash(acct.password, 12);
+        await db.update(accounts).set({ 
+          passwordHash, 
+          firstName: acct.firstName, 
+          lastName: acct.lastName, 
+          verified: true 
+        }).where(eq(accounts.id, existing.id));
+        console.log(`Fixed account credentials: ${acct.email}`);
+      } else if (!existing.verified) {
+        await db.update(accounts).set({ verified: true }).where(eq(accounts.id, existing.id));
+        console.log(`Verified account: ${acct.email}`);
+      }
+    }
+  }
+}
+
 export async function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   app.use(getSession());
+
+  await ensureDefaultAccounts();
 
   app.post("/api/auth/signup", async (req: any, res) => {
     try {
