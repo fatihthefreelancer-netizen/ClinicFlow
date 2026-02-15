@@ -17,7 +17,7 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { Search, Loader2, Calendar, FileDown } from "lucide-react";
+import { Search, Loader2, Calendar, FileDown, CheckCircle2, Clock } from "lucide-react";
 import { type Visit } from "@shared/schema";
 import * as XLSX from "xlsx";
 
@@ -36,6 +36,9 @@ export default function LiveBoard() {
     visit.patientName.toLowerCase().includes(search.toLowerCase()) ||
     visit.condition.toLowerCase().includes(search.toLowerCase())
   ) || [];
+
+  const doneCount = visits?.filter(v => v.status === "done").length ?? 0;
+  const waitingCount = visits?.filter(v => v.status === "waiting").length ?? 0;
 
   const handleRowClick = (visit: Visit) => {
     setSelectedVisit(visit);
@@ -98,6 +101,32 @@ export default function LiveBoard() {
                </Button>
              </div>
           </div>
+        </div>
+
+        {/* Summary Stats */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <Card className="p-4 bg-white border-slate-200 shadow-sm rounded-xl" data-testid="card-stat-done">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-emerald-50">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Consultés</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="text-stat-done-count">{doneCount}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 bg-white border-slate-200 shadow-sm rounded-xl" data-testid="card-stat-waiting">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-50">
+                <Clock className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">En attente</p>
+                <p className="text-2xl font-bold text-foreground" data-testid="text-stat-waiting-count">{waitingCount}</p>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* Filters & Search */}
