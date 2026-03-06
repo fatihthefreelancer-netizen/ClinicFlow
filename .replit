@@ -40,3 +40,12 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_log_in_with_replit:2.0.0"]
+
+[userenv]
+
+[userenv.shared]
+VITE_SUPABASE_URL = "https://zgiexxygdsjmethtaewg.supabase.co"
+VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnaWV4eHlnZHNqbWV0aHRhZXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDkyNTUsImV4cCI6MjA4ODMyNTI1NX0.rvEtF9657yHleimgYi7VS1m7vunKIZYonw9TETIAOjk"
+SUPABASE_URL = "https://zgiexxygdsjmethtaewg.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnaWV4eHlnZHNqbWV0aHRhZXdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI3NDkyNTUsImV4cCI6MjA4ODMyNTI1NX0.rvEtF9657yHleimgYi7VS1m7vunKIZYonw9TETIAOjk"
+SUPABASE_SERVICE_ROLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpnaWV4eHlnZHNqbWV0aHRhZXdnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mjc0OTI1NSwiZXhwIjoyMDg4MzI1MjU1fQ.QQL_Xd91YuQGkh0w_WLSSIQQ-L4eVc_uZ6O3Zbcsrl0"
