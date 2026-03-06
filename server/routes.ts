@@ -14,13 +14,16 @@ import { eq, and, gte, lte } from "drizzle-orm";
 const accountConnections = new Map<string, Set<WebSocket>>();
 
 export async function registerRoutes(
-  httpServer: Server,
+  httpServer: Server | null,
   app: Express
-): Promise<Server> {
+): Promise<Server | null> {
   await setupAuth(app);
   registerAuthRoutes(app);
 
-  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+  let wss: WebSocketServer | undefined;
+  if (httpServer) {
+    wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+  }
 
   const broadcast = (accountId: string, message: any) => {
     const connections = accountConnections.get(accountId);
@@ -33,9 +36,10 @@ export async function registerRoutes(
     });
   };
 
-  wss.on("connection", (ws, req) => {
-    let wsAccountId: string | null = null;
-    let authTimeout: NodeJS.Timeout | null = null;
+  if (wss) {
+    wss.on("connection", (ws, req) => {
+      let wsAccountId: string | null = null;
+      let authTimeout: NodeJS.Timeout | null = null;
 
     authTimeout = setTimeout(() => {
       if (!wsAccountId) {
@@ -80,6 +84,7 @@ export async function registerRoutes(
       }
     });
   });
+}
 
   app.get(api.auth.me.path, isAuthenticated, async (req: any, res) => {
     const user = req.user;
