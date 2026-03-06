@@ -12,14 +12,14 @@ import {
 } from "recharts";
 import { Users, TrendingUp, Activity } from "lucide-react";
 import { useVisits } from "@/hooks/use-visits";
-import { useWebSocket } from "@/hooks/use-websocket";
+import { useRealtime } from "@/hooks/use-realtime";
 import { useAnalytics } from "@/hooks/use-analytics";
 import { format, subDays, startOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMemo, useState } from "react";
 
 export default function Dashboard() {
-  useWebSocket();
+  useRealtime();
   const [todayDate] = useState(() => new Date());
   const todayStr = format(todayDate, "yyyy-MM-dd");
   const monthStart = startOfMonth(todayDate);

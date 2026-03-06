@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useVisits } from "@/hooks/use-visits";
-import { useWebSocket } from "@/hooks/use-websocket";
+import { useRealtime } from "@/hooks/use-realtime";
 import { format } from "date-fns";
 import { Layout } from "@/components/Layout";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -22,8 +22,8 @@ import { type Visit } from "@shared/schema";
 import * as XLSX from "xlsx";
 
 export default function LiveBoard() {
-  // Init WebSocket for real-time updates
-  useWebSocket();
+  // Init Supabase Realtime for instant synchronization
+  useRealtime();
 
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
