@@ -29,7 +29,6 @@ export async function apiRequest(
       ...(data ? { "Content-Type": "application/json" } : {}),
     },
     body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
   });
 
   await throwIfResNotOk(res);
@@ -44,7 +43,6 @@ export const getQueryFn: <T>(options: {
   async ({ queryKey }) => {
     const authHeaders = getAuthHeaders();
     const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
       headers: authHeaders,
     });
 

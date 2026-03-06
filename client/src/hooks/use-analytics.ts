@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@shared/routes";
+import { getAccessToken } from "@/lib/supabase";
 
 export function useAnalytics(dateRange: { startDate: string; endDate: string }) {
   const queryKey = [api.analytics.get.path, dateRange.startDate, dateRange.endDate];
@@ -8,7 +9,10 @@ export function useAnalytics(dateRange: { startDate: string; endDate: string }) 
     queryFn: async () => {
       const params = new URLSearchParams(dateRange);
       const url = `${api.analytics.get.path}?${params.toString()}`;
-      const res = await fetch(url, { credentials: "include" });
+      const token = getAccessToken();
+      const headers: Record<string, string> = {};
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+      const res = await fetch(url, { headers });
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to fetch analytics");
