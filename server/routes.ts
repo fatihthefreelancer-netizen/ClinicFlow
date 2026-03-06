@@ -35,14 +35,29 @@ export async function registerRoutes(
 
   wss.on("connection", (ws, req) => {
     let wsAccountId: string | null = null;
+    let authTimeout: NodeJS.Timeout | null = null;
+
+    authTimeout = setTimeout(() => {
+      if (!wsAccountId) {
+        ws.close(4001, "Authentication timeout");
+      }
+    }, 10000);
 
     ws.on("message", async (raw) => {
       try {
         const msg = JSON.parse(raw.toString());
         if (msg.type === "AUTH" && msg.token) {
           const { data: { user }, error } = await supabaseAdmin.auth.getUser(msg.token);
-          if (error || !user) return;
+          if (error || !user) {
+            ws.close(4003, "Invalid token");
+            return;
+          }
           
+          if (authTimeout) {
+            clearTimeout(authTimeout);
+            authTimeout = null;
+          }
+
           wsAccountId = user.id;
           if (!accountConnections.has(wsAccountId!)) {
             accountConnections.set(wsAccountId!, new Set());
@@ -53,6 +68,9 @@ export async function registerRoutes(
     });
 
     ws.on("close", () => {
+      if (authTimeout) {
+        clearTimeout(authTimeout);
+      }
       if (wsAccountId) {
         const conns = accountConnections.get(wsAccountId);
         if (conns) {
