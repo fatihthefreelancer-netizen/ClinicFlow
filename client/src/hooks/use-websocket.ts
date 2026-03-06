@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ws, api } from "@shared/routes";
 import type { Visit } from "@shared/schema";
 import { useAuth } from "./use-auth";
-import { supabase } from "@/lib/supabase";
+import { getAccessToken } from "@/lib/supabase";
 
 export function useWebSocket() {
   const queryClient = useQueryClient();
@@ -17,15 +17,18 @@ export function useWebSocket() {
     const host = window.location.host;
     const url = `${protocol}//${host}/ws`;
 
-    const connect = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) return;
+    const connect = () => {
+      const token = getAccessToken();
+      if (!token) {
+        setTimeout(connect, 1000);
+        return;
+      }
 
       const socket = new WebSocket(url);
       socketRef.current = socket;
 
       socket.onopen = () => {
-        socket.send(JSON.stringify({ type: "AUTH", token: session.access_token }));
+        socket.send(JSON.stringify({ type: "AUTH", token }));
       };
 
       socket.onmessage = (event) => {

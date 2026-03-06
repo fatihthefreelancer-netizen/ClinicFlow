@@ -63,7 +63,7 @@ export function useAuth() {
       }
 
       setUser(mapUser(data.user));
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries();
     } catch (err: any) {
       setLoginError(err.message || "Erreur de connexion");
     } finally {

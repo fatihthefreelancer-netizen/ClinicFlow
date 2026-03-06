@@ -8,3 +8,17 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+let currentAccessToken: string | null = null;
+
+supabase.auth.getSession().then(({ data: { session } }) => {
+  currentAccessToken = session?.access_token ?? null;
+});
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  currentAccessToken = session?.access_token ?? null;
+});
+
+export function getAccessToken(): string | null {
+  return currentAccessToken;
+}
