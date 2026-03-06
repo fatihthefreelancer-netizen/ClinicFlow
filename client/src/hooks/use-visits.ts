@@ -10,6 +10,25 @@ function authHeaders(): Record<string, string> {
   return headers;
 }
 
+async function extractErrorMessage(res: Response): Promise<string> {
+  const fallback = `Request failed (${res.status})`;
+  try {
+    const data = await res.clone().json();
+    if (data && typeof data === "object" && typeof (data as any).message === "string") {
+      return (data as any).message;
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    const text = await res.text();
+    if (text) return text;
+  } catch {
+    // ignore
+  }
+  return fallback;
+}
+
 export function useVisits(params?: { date?: string; startDate?: string; endDate?: string }) {
   const queryParams = params ? new URLSearchParams(params as any).toString() : "";
   const queryString = queryParams ? `?${queryParams}` : "";
@@ -19,7 +38,7 @@ export function useVisits(params?: { date?: string; startDate?: string; endDate?
     queryFn: async () => {
       const url = api.visits.list.path + queryString;
       const res = await fetch(url, { headers: authHeaders() });
-      if (!res.ok) throw new Error("Failed to fetch visits");
+      if (!res.ok) throw new Error(await extractErrorMessage(res));
       return api.visits.list.responses[200].parse(await res.json());
     },
   });
@@ -35,11 +54,7 @@ export function useCreateVisit() {
         body: JSON.stringify(data),
       });
       if (!res.ok) {
-        if (res.status === 400) {
-          const error = await res.json();
-          throw new Error(error.message || "Validation failed");
-        }
-        throw new Error("Failed to create visit");
+        throw new Error(await extractErrorMessage(res));
       }
       return api.visits.create.responses[201].parse(await res.json());
     },
@@ -60,7 +75,7 @@ export function useUpdateVisit() {
         headers: { ...authHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
-      if (!res.ok) throw new Error("Failed to update visit");
+      if (!res.ok) throw new Error(await extractErrorMessage(res));
       return api.visits.update.responses[200].parse(await res.json());
     },
     onSuccess: () => {
@@ -79,7 +94,7 @@ export function useDeleteVisit() {
         method: api.visits.delete.method,
         headers: authHeaders(),
       });
-      if (!res.ok) throw new Error("Failed to delete visit");
+      if (!res.ok) throw new Error(await extractErrorMessage(res));
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [api.visits.list.path] });

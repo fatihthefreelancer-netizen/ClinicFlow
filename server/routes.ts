@@ -134,7 +134,13 @@ export async function registerRoutes(
       if (err instanceof z.ZodError) {
         res.status(400).json({ message: err.errors[0].message });
       } else {
-        res.status(500).json({ message: "Internal server error" });
+        const message =
+          process.env.NODE_ENV === "production"
+            ? "Internal server error"
+            : err instanceof Error
+              ? err.message
+              : "Internal server error";
+        res.status(500).json({ message });
       }
     }
   });
@@ -158,7 +164,13 @@ export async function registerRoutes(
         if (err instanceof z.ZodError) {
             res.status(400).json({ message: err.errors[0].message });
         } else {
-            res.status(500).json({ message: err?.message || "Internal server error" });
+            const message =
+              process.env.NODE_ENV === "production"
+                ? "Internal server error"
+                : err instanceof Error
+                  ? err.message
+                  : "Internal server error";
+            res.status(500).json({ message });
         }
     }
   });

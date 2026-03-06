@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, date, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { users } from "./models/auth";
@@ -13,7 +13,7 @@ export const profiles = pgTable("profiles", {
 
 export const visits = pgTable("visits", {
   id: serial("id").primaryKey(),
-  accountId: varchar("account_id"),
+  accountId: uuid("account_id"),
   patientName: text("patient_name").notNull(),
   phoneNumber: text("phone_number"),
   age: integer("age"),
@@ -24,7 +24,7 @@ export const visits = pgTable("visits", {
   status: text("status", { enum: ["waiting", "in_consultation", "done", "left"] }).notNull().default("waiting"),
   price: integer("price"),
   nextStep: text("next_step"),
-  lastUpdatedBy: text("last_updated_by"),
+  lastUpdatedBy: uuid("last_updated_by"),
   visitDate: date("visit_date").defaultNow().notNull(),
 });
 

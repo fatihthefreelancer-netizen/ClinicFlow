@@ -95,10 +95,10 @@ export function AddPatientDialog() {
       });
       setOpen(false);
       form.reset();
-    } catch {
+    } catch (err: any) {
       toast({
         title: "Erreur",
-        description: "Impossible d'ajouter le patient. Veuillez réessayer.",
+        description: err?.message || "Impossible d'ajouter le patient. Veuillez réessayer.",
         variant: "destructive",
       });
     }

@@ -26,7 +26,7 @@ export default function LiveBoard() {
   useRealtime();
 
   const [search, setSearch] = useState("");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const { data: visits, isLoading } = useVisits({ date: selectedDate });
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);

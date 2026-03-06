@@ -85,10 +85,10 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
         description: "Les données du patient ont été mises à jour.",
       });
       onOpenChange(false);
-    } catch {
+    } catch (err: any) {
       toast({
         title: "Erreur",
-        description: "Impossible d'enregistrer les modifications. Veuillez réessayer.",
+        description: err?.message || "Impossible d'enregistrer les modifications. Veuillez réessayer.",
         variant: "destructive",
       });
     }
@@ -109,11 +109,11 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
         description: "Le patient a été retiré de la liste.",
       });
       onOpenChange(false);
-    } catch {
+    } catch (err: any) {
       setShowDeleteConfirm(false);
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer le patient. Veuillez réessayer.",
+        description: err?.message || "Impossible de supprimer le patient. Veuillez réessayer.",
         variant: "destructive",
       });
     }
