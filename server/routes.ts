@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { supabaseAdmin } from "./supabase";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -35,11 +36,14 @@ export async function registerRoutes(
   wss.on("connection", (ws, req) => {
     let wsAccountId: string | null = null;
 
-    ws.on("message", (raw) => {
+    ws.on("message", async (raw) => {
       try {
         const msg = JSON.parse(raw.toString());
-        if (msg.type === "AUTH" && msg.accountId) {
-          wsAccountId = msg.accountId;
+        if (msg.type === "AUTH" && msg.token) {
+          const { data: { user }, error } = await supabaseAdmin.auth.getUser(msg.token);
+          if (error || !user) return;
+          
+          wsAccountId = user.id;
           if (!accountConnections.has(wsAccountId!)) {
             accountConnections.set(wsAccountId!, new Set());
           }
@@ -60,16 +64,16 @@ export async function registerRoutes(
   });
 
   app.get(api.auth.me.path, isAuthenticated, async (req: any, res) => {
-    const account = req.session.account;
+    const user = req.user;
     res.json({
-      user: { claims: { sub: account.id, email: account.email } },
-      firstName: account.firstName,
-      lastName: account.lastName,
+      user: { claims: { sub: user.id, email: user.email } },
+      firstName: user.firstName,
+      lastName: user.lastName,
     });
   });
 
   app.get(api.visits.list.path, isAuthenticated, async (req: any, res) => {
-    const accountId = req.session.account.id;
+    const accountId = req.user.id;
     const { date: queryDate, range, startDate, endDate } = req.query;
     let filters: any = { accountId };
     
@@ -87,7 +91,7 @@ export async function registerRoutes(
   });
 
   app.get(api.visits.get.path, isAuthenticated, async (req: any, res) => {
-    const accountId = req.session.account.id;
+    const accountId = req.user.id;
     const visit = await storage.getVisit(Number(req.params.id));
     if (!visit || visit.accountId !== accountId) {
       return res.status(404).json({ message: "Visit not found" });
@@ -97,7 +101,7 @@ export async function registerRoutes(
 
   app.post(api.visits.create.path, isAuthenticated, async (req: any, res) => {
     try {
-      const accountId = req.session.account.id;
+      const accountId = req.user.id;
       const input = api.visits.create.input.parse(req.body);
       const visit = await storage.createVisit({ ...input, accountId });
       
@@ -114,7 +118,7 @@ export async function registerRoutes(
 
   app.put(api.visits.update.path, isAuthenticated, async (req: any, res) => {
     try {
-      const accountId = req.session.account.id;
+      const accountId = req.user.id;
       const id = Number(req.params.id);
 
       const existing = await storage.getVisit(id);
@@ -137,7 +141,7 @@ export async function registerRoutes(
   });
 
   app.delete(api.visits.delete.path, isAuthenticated, async (req: any, res) => {
-    const accountId = req.session.account.id;
+    const accountId = req.user.id;
     const id = Number(req.params.id);
 
     const existing = await storage.getVisit(id);
@@ -152,7 +156,7 @@ export async function registerRoutes(
   });
 
   app.get(api.analytics.get.path, isAuthenticated, async (req: any, res) => {
-    const accountId = req.session.account.id;
+    const accountId = req.user.id;
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
       return res.status(400).json({ message: "Start and End date required" });
@@ -166,7 +170,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/export", isAuthenticated, async (req: any, res) => {
-    const accountId = req.session.account.id;
+    const accountId = req.user.id;
     const { startDate, endDate } = req.query;
     if (!startDate || !endDate) {
       return res.status(400).json({ message: "Start and End date required" });

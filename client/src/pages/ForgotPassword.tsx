@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Stethoscope, Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
+import { supabase } from "@/lib/supabase";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
@@ -18,15 +19,14 @@ export default function ForgotPassword() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch("/api/auth/forgot-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Erreur");
+
+      if (resetError) {
+        throw new Error(resetError.message);
       }
+
       setSuccess(true);
     } catch (err: any) {
       setError(err.message);

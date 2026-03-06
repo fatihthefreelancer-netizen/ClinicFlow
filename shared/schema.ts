@@ -1,20 +1,19 @@
 import { pgTable, text, serial, integer, boolean, timestamp, date, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations } from "drizzle-orm";
-import { users, accounts } from "./models/auth";
+import { users } from "./models/auth";
 
 export * from "./models/auth";
 
 export const profiles = pgTable("profiles", {
   id: serial("id").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id),
+  userId: text("user_id").notNull(),
   role: text("role", { enum: ["doctor", "assistant"] }).notNull().default("assistant"),
 });
 
 export const visits = pgTable("visits", {
   id: serial("id").primaryKey(),
-  accountId: varchar("account_id").references(() => accounts.id),
+  accountId: varchar("account_id"),
   patientName: text("patient_name").notNull(),
   phoneNumber: text("phone_number"),
   age: integer("age"),
@@ -25,7 +24,7 @@ export const visits = pgTable("visits", {
   status: text("status", { enum: ["waiting", "in_consultation", "done", "left"] }).notNull().default("waiting"),
   price: integer("price"),
   nextStep: text("next_step"),
-  lastUpdatedBy: text("last_updated_by").references(() => users.id),
+  lastUpdatedBy: text("last_updated_by"),
   visitDate: date("visit_date").defaultNow().notNull(),
 });
 

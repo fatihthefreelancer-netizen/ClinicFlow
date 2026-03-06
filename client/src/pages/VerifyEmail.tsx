@@ -2,42 +2,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { useState, useEffect } from "react";
-import { Link, useSearch } from "wouter";
+import { Link } from "wouter";
 
 export default function VerifyEmail() {
-  const searchString = useSearch();
-  const params = new URLSearchParams(searchString);
-  const token = params.get("token");
-
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Lien de vérification invalide.");
-      return;
-    }
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const type = hashParams.get("type");
 
-    const verify = async () => {
-      try {
-        const res = await fetch(`/api/auth/verify-email?token=${token}`);
-        const data = await res.json();
-        if (res.ok) {
-          setStatus("success");
-          setMessage(data.message || "Email vérifié avec succès.");
-        } else {
-          setStatus("error");
-          setMessage(data.message || "Erreur de vérification.");
-        }
-      } catch {
+    if (type === "signup" || type === "email") {
+      setStatus("success");
+      setMessage("Email vérifié avec succès. Vous pouvez maintenant vous connecter.");
+    } else {
+      const searchParams = new URLSearchParams(window.location.search);
+      const errorDescription = searchParams.get("error_description");
+      
+      if (errorDescription) {
         setStatus("error");
-        setMessage("Erreur de vérification.");
+        setMessage(errorDescription);
+      } else {
+        setStatus("success");
+        setMessage("Email vérifié avec succès. Vous pouvez maintenant vous connecter.");
       }
-    };
-
-    verify();
-  }, [token]);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">

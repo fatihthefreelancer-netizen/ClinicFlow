@@ -3,22 +3,60 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Stethoscope, Loader2, CheckCircle2, Eye, EyeOff } from "lucide-react";
-import { useState } from "react";
-import { Link, useSearch } from "wouter";
+import { useState, useEffect } from "react";
+import { Link } from "wouter";
+import { supabase } from "@/lib/supabase";
 
 export default function ResetPassword() {
-  const searchString = useSearch();
-  const params = new URLSearchParams(searchString);
-  const token = params.get("token");
-
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [isInvalid, setIsInvalid] = useState(false);
 
-  if (!token) {
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = hashParams.get("access_token");
+    const type = hashParams.get("type");
+
+    if (accessToken && type === "recovery") {
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: hashParams.get("refresh_token") || "",
+      }).then(({ error }) => {
+        if (error) {
+          setIsInvalid(true);
+        } else {
+          setIsReady(true);
+        }
+      });
+    } else {
+      const checkSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setIsReady(true);
+        } else {
+          setIsInvalid(true);
+        }
+      };
+
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === "PASSWORD_RECOVERY" && session) {
+          setIsReady(true);
+          subscription.unsubscribe();
+        }
+      });
+
+      checkSession();
+
+      return () => subscription.unsubscribe();
+    }
+  }, []);
+
+  if (isInvalid) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
         <Card className="w-full max-w-md">
@@ -32,6 +70,14 @@ export default function ResetPassword() {
             </Link>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -52,15 +98,15 @@ export default function ResetPassword() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, password }),
+      const { error: updateError } = await supabase.auth.updateUser({
+        password,
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || "Erreur");
+
+      if (updateError) {
+        throw new Error(updateError.message);
       }
+
+      await supabase.auth.signOut();
       setSuccess(true);
     } catch (err: any) {
       setError(err.message);
