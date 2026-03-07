@@ -138,6 +138,43 @@ export async function createVisit(date: string, input: CreateVisitInput): Promis
     arrival_time: new Date().toISOString(),
   };
 
+  /** debug mode chatgpt */
+
+
+  async function debugSupabaseInsert(row: any) {
+
+    console.log("===== SUPABASE DEBUG START =====");
+  
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    console.log("SESSION:", sessionData);
+    console.log("SESSION ERROR:", sessionError);
+  
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    console.log("USER:", userData);
+    console.log("USER ERROR:", userError);
+  
+    const session = sessionData?.session;
+  
+    console.log("SESSION USER ID:", session?.user?.id);
+    console.log("SESSION EMAIL:", session?.user?.email);
+    console.log("ACCESS TOKEN:", session?.access_token);
+  
+    console.log("ROW SENT TO DB:", row);
+    console.log("UID SENT:", row.uid);
+  
+    if (session?.user?.id) {
+      console.log("UID MATCH SESSION:", row.uid === session.user.id);
+    }
+  
+    const { data: debugAuth, error: debugError } = await supabase.rpc("debug_auth");
+    console.log("SUPABASE AUTH CONTEXT:", debugAuth);
+    console.log("SUPABASE AUTH ERROR:", debugError);
+  
+    console.log("===== SUPABASE DEBUG END =====");
+  
+  }
+/** debug mode chatgpt */
+  console.log(row);
   const { data, error } = await supabase.from("visits").insert(row).select().single();
   if (error) throw error;
   return rowToDTO(data as VisitRow);
