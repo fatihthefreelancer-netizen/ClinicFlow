@@ -38,15 +38,19 @@ interface EditVisitDialogProps {
   visit: VisitLike | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Current date (YYYY-MM-DD) to refetch after update/delete */
+  refetchDate?: string;
 }
 
 const fullSchema = insertVisitSchema.partial();
 type FormValues = z.infer<typeof fullSchema>;
 
-export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogProps) {
+export function EditVisitDialog({ visit, open, onOpenChange, refetchDate }: EditVisitDialogProps) {
   const { updateVisit, deleteVisit } = useMockVisits();
   const { toast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(fullSchema),
@@ -71,14 +75,15 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
     }
   }, [mutuelleValue, mutuelleRemplieValue, form]);
 
-  function onSubmit(data: FormValues) {
+  async function onSubmit(data: FormValues) {
     if (!visit) return;
+    setIsSubmitting(true);
     try {
       const payload = { ...data };
       if (typeof payload.price === "string" && payload.price !== "") {
         payload.price = parseInt(payload.price);
       }
-      updateVisit(visit.id, payload);
+      await updateVisit(visit.id, payload, refetchDate);
       toast({
         title: "Modifications enregistrées",
         description: "Les données du patient ont été mises à jour.",
@@ -90,6 +95,8 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
         description: err instanceof Error ? err.message : "Impossible d'enregistrer les modifications. Veuillez réessayer.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -98,10 +105,11 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
     setShowDeleteConfirm(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!visit) return;
+    setIsDeleting(true);
     try {
-      deleteVisit(visit.id);
+      await deleteVisit(visit.id, refetchDate);
       setShowDeleteConfirm(false);
       toast({
         title: "Patient supprimé",
@@ -115,6 +123,8 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
         description: err instanceof Error ? err.message : "Impossible de supprimer le patient. Veuillez réessayer.",
         variant: "destructive",
       });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -315,16 +325,17 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                   variant="destructive"
                   size="icon"
                   onClick={handleDeleteClick}
+                  disabled={isSubmitting || isDeleting}
                   data-testid="button-delete-patient"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
                 <div className="flex gap-2 flex-wrap">
-                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="button-edit-cancel">
+                  <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting || isDeleting} data-testid="button-edit-cancel">
                     Annuler
                   </Button>
-                  <Button type="submit" data-testid="button-edit-save">
-                    Enregistrer
+                  <Button type="submit" disabled={isSubmitting || isDeleting} data-testid="button-edit-save">
+                    {isSubmitting ? "Enregistrement..." : "Enregistrer"}
                   </Button>
                 </div>
               </div>
@@ -342,7 +353,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
         cancelLabel="Annuler"
         onConfirm={handleDeleteConfirm}
         variant="destructive"
-        isLoading={false}
+        isLoading={isDeleting}
       />
     </>
   );

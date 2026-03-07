@@ -63,6 +63,7 @@ interface AddPatientDialogProps {
 
 export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
   const [open, setOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { addVisit } = useMockVisits();
   const { toast } = useToast();
 
@@ -87,9 +88,10 @@ export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
     }
   }, [mutuelleValue, mutuelleRemplieValue, form]);
 
-  function onSubmit(data: FormValues) {
+  async function onSubmit(data: FormValues) {
+    setIsSubmitting(true);
     try {
-      addVisit(selectedDate, {
+      await addVisit(selectedDate, {
         patientName: data.patientName,
         phoneNumber: data.phoneNumber || null,
         age: data.age ?? null,
@@ -113,6 +115,8 @@ export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
         description: err instanceof Error ? err.message : "Impossible d'ajouter le patient. Veuillez réessayer.",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -236,8 +240,8 @@ export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
               )}
             />
             <div className="flex justify-end pt-2">
-              <Button type="submit" className="w-full">
-                Ajouter à la file
+              <Button type="submit" disabled={isSubmitting} className="w-full">
+                {isSubmitting ? "Ajout..." : "Ajouter à la file"}
               </Button>
             </div>
           </form>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMockVisits } from "@/context/MockVisitsContext";
 import { format } from "date-fns";
 import { Layout } from "@/components/Layout";
@@ -16,17 +16,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search, Calendar, FileDown, CheckCircle2, Clock } from "lucide-react";
+import { Search, Calendar, FileDown, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import type { VisitLike } from "@/context/MockVisitsContext";
 import * as XLSX from "xlsx";
 
 export default function LiveBoard() {
-  const { getVisitsForDate } = useMockVisits();
+  const { getVisitsForDate, loadVisitsForDate, isLoadingDate } = useMockVisits();
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const visits = getVisitsForDate(selectedDate);
   const [selectedVisit, setSelectedVisit] = useState<VisitLike | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+  useEffect(() => {
+    loadVisitsForDate(selectedDate);
+  }, [selectedDate, loadVisitsForDate]);
 
   const filteredVisits = visits.filter(
     (visit) =>
@@ -72,7 +76,7 @@ export default function LiveBoard() {
             <h1 className="text-3xl font-bold text-slate-900">Tableau des Patients</h1>
             <p className="text-slate-500 mt-1 flex items-center gap-2">
               <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              Données de démonstration
+              Données Supabase
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 items-center">
@@ -155,7 +159,16 @@ export default function LiveBoard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredVisits.length === 0 ? (
+                {isLoadingDate ? (
+                  <TableRow>
+                    <TableCell colSpan={10} className="h-48 text-center">
+                      <div className="flex flex-col items-center justify-center text-slate-400">
+                        <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                        <p>Chargement des visites...</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredVisits.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={10} className="h-48 text-center">
                       <p className="text-slate-500 font-medium">Aucune visite trouvée pour cette date.</p>
@@ -204,7 +217,12 @@ export default function LiveBoard() {
         </Card>
       </div>
 
-      <EditVisitDialog visit={selectedVisit} open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} />
+      <EditVisitDialog
+        visit={selectedVisit}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        refetchDate={selectedDate}
+      />
     </Layout>
   );
 }

@@ -14,18 +14,26 @@ import { Users, TrendingUp, Activity } from "lucide-react";
 import { useMockVisits } from "@/context/MockVisitsContext";
 import { format, subDays, startOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 const validStatuses = ["waiting", "in_consultation", "done"] as const;
 
 export default function Dashboard() {
-  const { getVisitsForDate, getVisitsInRange } = useMockVisits();
+  const { getVisitsForDate, getVisitsInRange, loadVisitsForDate, loadVisitsInRange } = useMockVisits();
   const [todayDate] = useState(() => new Date());
   const todayStr = format(todayDate, "yyyy-MM-dd");
   const monthStart = startOfMonth(todayDate);
   const monthStartStr = format(monthStart, "yyyy-MM-dd");
   const monthName = format(todayDate, "MMMM", { locale: fr });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+  const chartStartStr = format(subDays(todayDate, 6), "yyyy-MM-dd");
+
+  useEffect(() => {
+    loadVisitsForDate(todayStr);
+    loadVisitsInRange(monthStartStr, todayStr);
+    loadVisitsInRange(chartStartStr, todayStr);
+  }, [todayStr, monthStartStr, chartStartStr, loadVisitsForDate, loadVisitsInRange]);
 
   const visitsToday = getVisitsForDate(todayStr);
   const currentMonthVisits = getVisitsInRange(monthStartStr, todayStr);
@@ -49,7 +57,6 @@ export default function Dashboard() {
     };
   }, [currentMonthVisits, todayDate]);
 
-  const chartStartStr = format(subDays(todayDate, 6), "yyyy-MM-dd");
   const rangeVisits = getVisitsInRange(chartStartStr, todayStr);
 
   const chartData = useMemo(() => {
