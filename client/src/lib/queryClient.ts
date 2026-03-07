@@ -10,6 +10,7 @@ async function throwIfResNotOk(res: Response) {
 
 function getAuthHeaders(): Record<string, string> {
   const token = getAccessToken();
+  console.log("getAuthHeaders: token present:", !!token);
   if (token) {
     return { Authorization: `Bearer ${token}` };
   }
@@ -21,6 +22,9 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
+  console.log("========== API REQUEST ==========");
+  console.log("METHOD:", method, "URL:", url);
+  console.log("REQUEST DATA:", data);
   const authHeaders = getAuthHeaders();
   const res = await fetch(url, {
     method,

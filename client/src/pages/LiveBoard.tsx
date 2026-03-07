@@ -21,14 +21,17 @@ import type { VisitLike } from "@/context/MockVisitsContext";
 import * as XLSX from "xlsx";
 
 export default function LiveBoard() {
+  console.log("========== PAGE LOADED: LiveBoard ==========");
   const { getVisitsForDate, loadVisitsForDate, isLoadingDate } = useMockVisits();
   const [search, setSearch] = useState("");
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const visits = getVisitsForDate(selectedDate);
+  console.log("LiveBoard: visits for date", selectedDate, "count:", visits.length, "data:", visits);
   const [selectedVisit, setSelectedVisit] = useState<VisitLike | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
+    console.log("LiveBoard: FETCH PATIENTS START for date:", selectedDate);
     loadVisitsForDate(selectedDate);
   }, [selectedDate, loadVisitsForDate]);
 
@@ -42,6 +45,7 @@ export default function LiveBoard() {
   const waitingCount = visits.filter((v) => v.status === "waiting").length;
 
   const handleRowClick = (visit: VisitLike) => {
+    console.log("LiveBoard: ROW CLICKED - visit:", visit);
     setSelectedVisit(visit);
     setIsEditDialogOpen(true);
   };

@@ -33,21 +33,33 @@ export function MockVisitsProvider({ children }: { children: React.ReactNode }) 
   const [isLoadingRange, setIsLoadingRange] = useState(false);
 
   const loadVisitsForDate = useCallback(async (date: string) => {
+    console.log("========== CONTEXT: loadVisitsForDate ==========");
+    console.log("DATE:", date);
     setIsLoadingDate(true);
     try {
       const list = await visitsService.getVisitsForDate(date);
+      console.log("CONTEXT: loadVisitsForDate RESULT - count:", list.length, "data:", list);
       setCacheByDate((prev) => ({ ...prev, [date]: list }));
+    } catch (err) {
+      console.error("CONTEXT: loadVisitsForDate ERROR:", err);
+      throw err;
     } finally {
       setIsLoadingDate(false);
     }
   }, []);
 
   const loadVisitsInRange = useCallback(async (startDate: string, endDate: string) => {
+    console.log("========== CONTEXT: loadVisitsInRange ==========");
+    console.log("START DATE:", startDate, "END DATE:", endDate);
     const key = `${startDate}-${endDate}`;
     setIsLoadingRange(true);
     try {
       const list = await visitsService.getVisitsInRange(startDate, endDate);
+      console.log("CONTEXT: loadVisitsInRange RESULT - count:", list.length);
       setRangeCache((prev) => ({ ...prev, [key]: list }));
+    } catch (err) {
+      console.error("CONTEXT: loadVisitsInRange ERROR:", err);
+      throw err;
     } finally {
       setIsLoadingRange(false);
     }
@@ -70,6 +82,9 @@ export function MockVisitsProvider({ children }: { children: React.ReactNode }) 
   );
 
   const addVisit = useCallback(async (date: string, data: AddVisitData): Promise<VisitLike> => {
+    console.log("========== CONTEXT: addVisit ==========");
+    console.log("DATE:", date);
+    console.log("ADD VISIT DATA:", data);
     const created = await visitsService.createVisit(date, {
       patientName: data.patientName,
       phoneNumber: data.phoneNumber ?? null,
@@ -81,12 +96,16 @@ export function MockVisitsProvider({ children }: { children: React.ReactNode }) 
       price: data.price ?? null,
       nextStep: data.nextStep ?? null,
     });
+    console.log("CONTEXT: addVisit CREATED:", created);
     await loadVisitsForDate(date);
     return created as VisitLike;
   }, [loadVisitsForDate]);
 
   const updateVisit = useCallback(
     async (id: number, data: Partial<VisitLike>, refetchDate?: string): Promise<void> => {
+      console.log("========== CONTEXT: updateVisit ==========");
+      console.log("VISIT ID:", id);
+      console.log("UPDATE DATA:", data);
       const dto: Partial<visitsService.VisitDTO> = {};
       if (data.patientName !== undefined) dto.patientName = data.patientName;
       if (data.phoneNumber !== undefined) dto.phoneNumber = data.phoneNumber;
@@ -97,7 +116,9 @@ export function MockVisitsProvider({ children }: { children: React.ReactNode }) 
       if (data.status !== undefined) dto.status = data.status;
       if (data.price !== undefined) dto.price = data.price;
       if (data.nextStep !== undefined) dto.nextStep = data.nextStep;
+      console.log("CONTEXT: updateVisit DTO:", dto);
       await visitsService.updateVisit(id, dto);
+      console.log("CONTEXT: updateVisit SUCCESS");
       if (refetchDate) await loadVisitsForDate(refetchDate);
     },
     [loadVisitsForDate]
@@ -105,7 +126,10 @@ export function MockVisitsProvider({ children }: { children: React.ReactNode }) 
 
   const deleteVisit = useCallback(
     async (id: number, refetchDate?: string): Promise<void> => {
+      console.log("========== CONTEXT: deleteVisit ==========");
+      console.log("VISIT ID:", id);
       await visitsService.deleteVisit(id);
+      console.log("CONTEXT: deleteVisit SUCCESS");
       if (refetchDate) await loadVisitsForDate(refetchDate);
     },
     [loadVisitsForDate]

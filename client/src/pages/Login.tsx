@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Link } from "wouter";
 
 export default function Login() {
+  console.log("========== PAGE LOADED: Login ==========");
   const { isAuthenticated, isLoading, login, isLoggingIn, loginError } = useAuth();
   const [, setLocation] = useLocation();
   const [email, setEmail] = useState("");
@@ -16,7 +17,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
+    console.log("Login: Auth check - isLoading:", isLoading, "isAuthenticated:", isAuthenticated);
     if (!isLoading && isAuthenticated) {
+      console.log("Login: Already authenticated, redirecting to /");
       setLocation("/");
     }
   }, [isLoading, isAuthenticated, setLocation]);
@@ -25,6 +28,8 @@ export default function Login() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("========== LOGIN FORM SUBMITTED ==========");
+    console.log("LOGIN EMAIL:", email);
     login({ email, password });
   };
 

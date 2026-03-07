@@ -76,6 +76,9 @@ export function EditVisitDialog({ visit, open, onOpenChange, refetchDate }: Edit
   }, [mutuelleValue, mutuelleRemplieValue, form]);
 
   async function onSubmit(data: FormValues) {
+    console.log("========== EDIT PATIENT SAVE CLICKED ==========");
+    console.log("FORM DATA:", data);
+    console.log("VISIT ID:", visit?.id);
     if (!visit) return;
     setIsSubmitting(true);
     try {
@@ -84,12 +87,14 @@ export function EditVisitDialog({ visit, open, onOpenChange, refetchDate }: Edit
         payload.price = parseInt(payload.price);
       }
       await updateVisit(visit.id, payload, refetchDate);
+      console.log("EDIT PATIENT SUCCESS");
       toast({
         title: "Modifications enregistrées",
         description: "Les données du patient ont été mises à jour.",
       });
       onOpenChange(false);
     } catch (err: unknown) {
+      console.error("EDIT PATIENT FAILED:", err);
       toast({
         title: "Erreur",
         description: err instanceof Error ? err.message : "Impossible d'enregistrer les modifications. Veuillez réessayer.",
@@ -101,15 +106,20 @@ export function EditVisitDialog({ visit, open, onOpenChange, refetchDate }: Edit
   }
 
   const handleDeleteClick = () => {
+    console.log("========== DELETE PATIENT BUTTON CLICKED ==========");
+    console.log("VISIT ID:", visit?.id);
     if (!visit) return;
     setShowDeleteConfirm(true);
   };
 
   const handleDeleteConfirm = async () => {
+    console.log("========== DELETE PATIENT CONFIRMED ==========");
+    console.log("DELETING VISIT ID:", visit?.id);
     if (!visit) return;
     setIsDeleting(true);
     try {
       await deleteVisit(visit.id, refetchDate);
+      console.log("DELETE PATIENT SUCCESS");
       setShowDeleteConfirm(false);
       toast({
         title: "Patient supprimé",
@@ -117,6 +127,7 @@ export function EditVisitDialog({ visit, open, onOpenChange, refetchDate }: Edit
       });
       onOpenChange(false);
     } catch (err: unknown) {
+      console.error("DELETE PATIENT FAILED:", err);
       setShowDeleteConfirm(false);
       toast({
         title: "Erreur",

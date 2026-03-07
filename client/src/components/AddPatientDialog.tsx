@@ -89,6 +89,9 @@ export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
   }, [mutuelleValue, mutuelleRemplieValue, form]);
 
   async function onSubmit(data: FormValues) {
+    console.log("========== ADD PATIENT BUTTON CLICKED ==========");
+    console.log("FORM DATA:", data);
+    console.log("SELECTED DATE:", selectedDate);
     setIsSubmitting(true);
     try {
       await addVisit(selectedDate, {
@@ -103,6 +106,7 @@ export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
         nextStep: null,
         lastUpdatedBy: null,
       });
+      console.log("ADD PATIENT SUCCESS");
       toast({
         title: "Patient ajouté",
         description: "Le patient a été ajouté à la file d'attente.",
@@ -110,6 +114,7 @@ export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
       setOpen(false);
       form.reset();
     } catch (err: unknown) {
+      console.error("ADD PATIENT FAILED:", err);
       toast({
         title: "Erreur",
         description: err instanceof Error ? err.message : "Impossible d'ajouter le patient. Veuillez réessayer.",

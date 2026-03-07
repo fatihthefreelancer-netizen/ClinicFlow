@@ -31,13 +31,29 @@ export function useAuth() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
+    console.log("========== useAuth: INITIAL SESSION FETCH ==========");
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(mapUser(session?.user ?? null));
+      console.log("useAuth getSession() result:");
+      console.log("  SESSION EXISTS:", !!session);
+      console.log("  AUTH USER:", session?.user);
+      console.log("  AUTH USER ID:", session?.user?.id);
+      console.log("  AUTH USER EMAIL:", session?.user?.email);
+      console.log("  ACCESS TOKEN PRESENT:", !!session?.access_token);
+      const mapped = mapUser(session?.user ?? null);
+      console.log("  MAPPED USER:", mapped);
+      setUser(mapped);
       setIsLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(mapUser(session?.user ?? null));
+      console.log("========== useAuth: AUTH STATE CHANGED ==========");
+      console.log("  EVENT:", _event);
+      console.log("  SESSION EXISTS:", !!session);
+      console.log("  AUTH USER ID:", session?.user?.id);
+      console.log("  AUTH USER EMAIL:", session?.user?.email);
+      const mapped = mapUser(session?.user ?? null);
+      console.log("  MAPPED USER:", mapped);
+      setUser(mapped);
       setIsLoading(false);
     });
 
@@ -45,6 +61,8 @@ export function useAuth() {
   }, []);
 
   const login = useCallback(async (credentials: { email: string; password: string }) => {
+    console.log("========== LOGIN ATTEMPT ==========");
+    console.log("LOGIN EMAIL:", credentials.email);
     setLoginError(null);
     setIsLoggingIn(true);
     try {
@@ -53,7 +71,16 @@ export function useAuth() {
         password: credentials.password,
       });
 
+      console.log("LOGIN RESULT:");
+      console.log("  LOGIN DATA:", data);
+      console.log("  LOGIN ERROR:", error);
+      console.log("  LOGIN SESSION:", data?.session);
+      console.log("  LOGIN USER:", data?.user);
+      console.log("  LOGIN USER ID:", data?.user?.id);
+      console.log("  LOGIN ACCESS TOKEN PRESENT:", !!data?.session?.access_token);
+
       if (error) {
+        console.error("LOGIN FAILED:", error.message);
         let message = "Email ou mot de passe incorrect";
         if (error.message.includes("Email not confirmed")) {
           message = "Veuillez vérifier votre email avant de vous connecter";
@@ -62,9 +89,11 @@ export function useAuth() {
         return;
       }
 
+      console.log("LOGIN SUCCESS - User ID:", data.user?.id);
       setUser(mapUser(data.user));
       queryClient.invalidateQueries();
     } catch (err: any) {
+      console.error("LOGIN EXCEPTION:", err);
       setLoginError(err.message || "Erreur de connexion");
     } finally {
       setIsLoggingIn(false);
@@ -72,6 +101,8 @@ export function useAuth() {
   }, [queryClient]);
 
   const signup = useCallback(async (data: { email: string; password: string; firstName?: string; lastName?: string }) => {
+    console.log("========== SIGNUP ATTEMPT ==========");
+    console.log("SIGNUP EMAIL:", data.email);
     setSignupError(null);
     setIsSigningUp(true);
     try {
@@ -88,15 +119,21 @@ export function useAuth() {
         },
       });
 
+      console.log("SIGNUP RESULT:");
+      console.log("  SIGNUP ERROR:", error);
+
       if (error) {
+        console.error("SIGNUP FAILED:", error.message);
         if (error.message.includes("already registered")) {
           throw new Error("Un compte avec cet email existe déjà");
         }
         throw new Error(error.message);
       }
 
+      console.log("SIGNUP SUCCESS");
       return { message: "Compte créé. Vérifiez votre email pour activer votre compte." };
     } catch (err: any) {
+      console.error("SIGNUP EXCEPTION:", err);
       setSignupError(err.message);
       throw err;
     } finally {
@@ -105,9 +142,11 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(async () => {
+    console.log("========== LOGOUT ==========");
     setIsLoggingOut(true);
     try {
       await supabase.auth.signOut();
+      console.log("LOGOUT SUCCESS");
       setUser(null);
       queryClient.clear();
     } finally {

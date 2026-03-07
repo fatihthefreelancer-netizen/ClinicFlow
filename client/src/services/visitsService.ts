@@ -76,6 +76,18 @@ function endOfDay(date: string): string {
 
 /** Get visits for a single day (by arrival_time range). Returns UI format. */
 export async function getVisitsForDate(date: string): Promise<VisitDTO[]> {
+  console.log("========== QUERY: getVisitsForDate ==========");
+  console.log("QUERY START");
+  console.log("TABLE: visits");
+  console.log("OPERATION: select");
+  console.log("FILTERS:", { date, gte: startOfDay(date), lte: endOfDay(date) });
+
+  // Log current session before query
+  const { data: { session: currentSession } } = await supabase.auth.getSession();
+  console.log("SESSION USER ID (before query):", currentSession?.user?.id);
+  console.log("SESSION EXISTS (before query):", !!currentSession);
+  console.log("ACCESS TOKEN PRESENT (before query):", !!currentSession?.access_token);
+
   const startOfDayIso = startOfDay(date);
   const endOfDayIso = endOfDay(date);
   const { data, error } = await supabase
@@ -85,12 +97,34 @@ export async function getVisitsForDate(date: string): Promise<VisitDTO[]> {
     .lte("arrival_time", endOfDayIso)
     .order("arrival_time", { ascending: true });
 
-  if (error) throw error;
+  console.log("QUERY RESULT DATA:", data);
+  console.log("QUERY RESULT DATA LENGTH:", data?.length);
+  console.log("QUERY ERROR:", error);
+  if (error) {
+    console.error("ERROR MESSAGE:", error?.message);
+    console.error("ERROR CODE:", error?.code);
+    console.error("ERROR DETAILS:", error?.details);
+    console.error("ERROR HINT:", error?.hint);
+    throw error;
+  }
+  console.log("========== END QUERY: getVisitsForDate ==========");
   return (data ?? []).map(rowToDTO);
 }
 
 /** Get visits in a date range (inclusive, by arrival_time). For dashboard. */
 export async function getVisitsInRange(startDate: string, endDate: string): Promise<VisitDTO[]> {
+  console.log("========== QUERY: getVisitsInRange ==========");
+  console.log("QUERY START");
+  console.log("TABLE: visits");
+  console.log("OPERATION: select");
+  console.log("FILTERS:", { startDate, endDate, gte: startOfDay(startDate), lte: endOfDay(endDate) });
+
+  // Log current session before query
+  const { data: { session: currentSession } } = await supabase.auth.getSession();
+  console.log("SESSION USER ID (before query):", currentSession?.user?.id);
+  console.log("SESSION EXISTS (before query):", !!currentSession);
+  console.log("ACCESS TOKEN PRESENT (before query):", !!currentSession?.access_token);
+
   const startOfDayIso = startOfDay(startDate);
   const endOfDayIso = endOfDay(endDate);
   const { data, error } = await supabase
@@ -100,7 +134,17 @@ export async function getVisitsInRange(startDate: string, endDate: string): Prom
     .lte("arrival_time", endOfDayIso)
     .order("arrival_time", { ascending: true });
 
-  if (error) throw error;
+  console.log("QUERY RESULT DATA:", data);
+  console.log("QUERY RESULT DATA LENGTH:", data?.length);
+  console.log("QUERY ERROR:", error);
+  if (error) {
+    console.error("ERROR MESSAGE:", error?.message);
+    console.error("ERROR CODE:", error?.code);
+    console.error("ERROR DETAILS:", error?.details);
+    console.error("ERROR HINT:", error?.hint);
+    throw error;
+  }
+  console.log("========== END QUERY: getVisitsInRange ==========");
   return (data ?? []).map(rowToDTO);
 }
 
@@ -118,11 +162,35 @@ export type CreateVisitInput = {
 };
 
 export async function createVisit(date: string, input: CreateVisitInput): Promise<VisitDTO> {
+  console.log("========== QUERY: createVisit ==========");
+  console.log("CREATE VISIT FUNCTION CALLED");
+  console.log("QUERY START");
+  console.log("TABLE: visits");
+  console.log("OPERATION: insert");
+  console.log("INPUT:", input);
+
   const {
     data: { session },
     error: sessionError,
   } = await supabase.auth.getSession();
-  if (sessionError || !session?.user?.id) throw new Error("Non authentifié");
+
+  console.log("========== RLS CONTEXT CHECK (createVisit) ==========");
+  console.log("SESSION OBJECT:", session);
+  console.log("SESSION EXISTS:", !!session);
+  console.log("SESSION ERROR:", sessionError);
+  console.log("AUTH USER:", session?.user);
+  console.log("AUTH USER ID:", session?.user?.id);
+  console.log("AUTH USER EMAIL:", session?.user?.email);
+  console.log("ACCESS TOKEN PRESENT:", !!session?.access_token);
+  console.log("ACCESS TOKEN (first 20 chars):", session?.access_token?.substring(0, 20));
+
+  if (sessionError || !session?.user?.id) {
+    console.error("AUTHENTICATION CHECK FAILED");
+    console.error("SESSION:", session);
+    console.error("SESSION ERROR:", sessionError);
+    console.error("USER ID PRESENT:", !!session?.user?.id);
+    throw new Error("Non authentifié");
+  }
 
   const row = {
     uid: session.user.id,
@@ -138,50 +206,53 @@ export async function createVisit(date: string, input: CreateVisitInput): Promis
     arrival_time: new Date().toISOString(),
   };
 
-  /** debug mode chatgpt */
+  console.log("PAYLOAD (row to insert):", row);
+  console.log("SESSION USER ID:", session.user.id);
+  console.log("UID SENT TO DATABASE:", row.uid);
+  console.log("UID MATCH:", row.uid === session.user.id);
 
+  // Also call getUser() to verify token-based identity
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  console.log("getUser() USER:", userData?.user);
+  console.log("getUser() USER ID:", userData?.user?.id);
+  console.log("getUser() ERROR:", userError);
+  console.log("getUser() ID MATCHES SESSION ID:", userData?.user?.id === session.user.id);
 
-  async function debugSupabaseInsert(row: any) {
-
-    console.log("===== SUPABASE DEBUG START =====");
-  
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    console.log("SESSION:", sessionData);
-    console.log("SESSION ERROR:", sessionError);
-  
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    console.log("USER:", userData);
-    console.log("USER ERROR:", userError);
-  
-    const session = sessionData?.session;
-  
-    console.log("SESSION USER ID:", session?.user?.id);
-    console.log("SESSION EMAIL:", session?.user?.email);
-    console.log("ACCESS TOKEN:", session?.access_token);
-  
-    console.log("ROW SENT TO DB:", row);
-    console.log("UID SENT:", row.uid);
-  
-    if (session?.user?.id) {
-      console.log("UID MATCH SESSION:", row.uid === session.user.id);
-    }
-  
-    const { data: debugAuth, error: debugError } = await supabase.rpc("debug_auth");
-    console.log("SUPABASE AUTH CONTEXT:", debugAuth);
-    console.log("SUPABASE AUTH ERROR:", debugError);
-  
-    console.log("===== SUPABASE DEBUG END =====");
-  
-  }
-/** debug mode chatgpt */
-  console.log(row);
+  console.log("EXECUTING INSERT QUERY NOW...");
   const { data, error } = await supabase.from("visits").insert(row).select().single();
-  if (error) throw error;
+
+  console.log("QUERY RESULT DATA:", data);
+  console.log("QUERY ERROR:", error);
+  if (error) {
+    console.error("INSERT FAILED!");
+    console.error("ERROR MESSAGE:", error?.message);
+    console.error("ERROR CODE:", error?.code);
+    console.error("ERROR DETAILS:", error?.details);
+    console.error("ERROR HINT:", error?.hint);
+    console.error("ERROR STATUS:", (error as any)?.status);
+    console.error("FULL ERROR OBJECT:", JSON.stringify(error, null, 2));
+    throw error;
+  }
+  console.log("INSERT SUCCESS - returned row:", data);
+  console.log("========== END QUERY: createVisit ==========");
   return rowToDTO(data as VisitRow);
 }
 
 /** Update by id. Partial camelCase fields. last_updated is set by DB trigger. */
 export async function updateVisit(id: number, updates: Partial<VisitDTO>): Promise<VisitDTO> {
+  console.log("========== QUERY: updateVisit ==========");
+  console.log("QUERY START");
+  console.log("TABLE: visits");
+  console.log("OPERATION: update");
+  console.log("VISIT ID:", id);
+  console.log("UPDATES:", updates);
+
+  // Log current session before query
+  const { data: { session: currentSession } } = await supabase.auth.getSession();
+  console.log("SESSION USER ID (before update):", currentSession?.user?.id);
+  console.log("SESSION EXISTS (before update):", !!currentSession);
+  console.log("ACCESS TOKEN PRESENT (before update):", !!currentSession?.access_token);
+
   const row: Record<string, unknown> = {};
   if (updates.patientName !== undefined) row.patient_name = updates.patientName;
   if (updates.phoneNumber !== undefined) row.phone = updates.phoneNumber;
@@ -193,16 +264,57 @@ export async function updateVisit(id: number, updates: Partial<VisitDTO>): Promi
   if (updates.price !== undefined) row.price = updates.price;
   if (updates.nextStep !== undefined) row.next_step = updates.nextStep;
 
+  console.log("PAYLOAD (row to update):", row);
+
   if (Object.keys(row).length === 0) {
+    console.error("UPDATE ERROR: No fields to update");
     throw new Error("No fields to update");
   }
+
+  console.log("EXECUTING UPDATE QUERY NOW...");
   const { data, error } = await supabase.from("visits").update(row).eq("id", id).select().single();
-  if (error) throw error;
+
+  console.log("QUERY RESULT DATA:", data);
+  console.log("QUERY ERROR:", error);
+  if (error) {
+    console.error("UPDATE FAILED!");
+    console.error("ERROR MESSAGE:", error?.message);
+    console.error("ERROR CODE:", error?.code);
+    console.error("ERROR DETAILS:", error?.details);
+    console.error("ERROR HINT:", error?.hint);
+    throw error;
+  }
+  console.log("UPDATE SUCCESS - returned row:", data);
+  console.log("========== END QUERY: updateVisit ==========");
   return rowToDTO(data as VisitRow);
 }
 
 /** Delete by id. */
 export async function deleteVisit(id: number): Promise<void> {
+  console.log("========== QUERY: deleteVisit ==========");
+  console.log("QUERY START");
+  console.log("TABLE: visits");
+  console.log("OPERATION: delete");
+  console.log("VISIT ID:", id);
+
+  // Log current session before query
+  const { data: { session: currentSession } } = await supabase.auth.getSession();
+  console.log("SESSION USER ID (before delete):", currentSession?.user?.id);
+  console.log("SESSION EXISTS (before delete):", !!currentSession);
+  console.log("ACCESS TOKEN PRESENT (before delete):", !!currentSession?.access_token);
+
+  console.log("EXECUTING DELETE QUERY NOW...");
   const { error } = await supabase.from("visits").delete().eq("id", id);
-  if (error) throw error;
+
+  console.log("QUERY ERROR:", error);
+  if (error) {
+    console.error("DELETE FAILED!");
+    console.error("ERROR MESSAGE:", error?.message);
+    console.error("ERROR CODE:", error?.code);
+    console.error("ERROR DETAILS:", error?.details);
+    console.error("ERROR HINT:", error?.hint);
+    throw error;
+  }
+  console.log("DELETE SUCCESS");
+  console.log("========== END QUERY: deleteVisit ==========");
 }

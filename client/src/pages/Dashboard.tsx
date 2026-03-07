@@ -19,6 +19,7 @@ import { useMemo, useState, useEffect } from "react";
 const validStatuses = ["waiting", "in_consultation", "done"] as const;
 
 export default function Dashboard() {
+  console.log("========== PAGE LOADED: Dashboard ==========");
   const { getVisitsForDate, getVisitsInRange, loadVisitsForDate, loadVisitsInRange } = useMockVisits();
   const [todayDate] = useState(() => new Date());
   const todayStr = format(todayDate, "yyyy-MM-dd");
@@ -30,6 +31,8 @@ export default function Dashboard() {
   const chartStartStr = format(subDays(todayDate, 6), "yyyy-MM-dd");
 
   useEffect(() => {
+    console.log("Dashboard: FETCH DATA START");
+    console.log("Dashboard: loading today:", todayStr, "month start:", monthStartStr, "chart start:", chartStartStr);
     loadVisitsForDate(todayStr);
     loadVisitsInRange(monthStartStr, todayStr);
     loadVisitsInRange(chartStartStr, todayStr);
