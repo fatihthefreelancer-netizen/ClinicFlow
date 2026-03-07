@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertVisitSchema } from "@shared/schema";
-import { useUpdateVisit, useDeleteVisit } from "@/hooks/use-visits";
+import { useMockVisits } from "@/context/MockVisitsContext";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,14 +28,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { z } from "zod";
-import { type Visit } from "@shared/schema";
+import type { VisitLike } from "@/context/MockVisitsContext";
 import { Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 
 interface EditVisitDialogProps {
-  visit: Visit | null;
+  visit: VisitLike | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -44,8 +44,7 @@ const fullSchema = insertVisitSchema.partial();
 type FormValues = z.infer<typeof fullSchema>;
 
 export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogProps) {
-  const { mutateAsync: updateVisit, isPending: isUpdating } = useUpdateVisit();
-  const { mutateAsync: deleteVisit, isPending: isDeleting } = useDeleteVisit();
+  const { updateVisit, deleteVisit } = useMockVisits();
   const { toast } = useToast();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -72,23 +71,23 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
     }
   }, [mutuelleValue, mutuelleRemplieValue, form]);
 
-  async function onSubmit(data: FormValues) {
+  function onSubmit(data: FormValues) {
     if (!visit) return;
     try {
       const payload = { ...data };
-      if (typeof payload.price === 'string' && payload.price !== '') {
+      if (typeof payload.price === "string" && payload.price !== "") {
         payload.price = parseInt(payload.price);
       }
-      await updateVisit({ id: visit.id, ...payload });
+      updateVisit(visit.id, payload);
       toast({
         title: "Modifications enregistrées",
         description: "Les données du patient ont été mises à jour.",
       });
       onOpenChange(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Erreur",
-        description: err?.message || "Impossible d'enregistrer les modifications. Veuillez réessayer.",
+        description: err instanceof Error ? err.message : "Impossible d'enregistrer les modifications. Veuillez réessayer.",
         variant: "destructive",
       });
     }
@@ -99,21 +98,21 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
     setShowDeleteConfirm(true);
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = () => {
     if (!visit) return;
     try {
-      await deleteVisit(visit.id);
+      deleteVisit(visit.id);
       setShowDeleteConfirm(false);
       toast({
         title: "Patient supprimé",
         description: "Le patient a été retiré de la liste.",
       });
       onOpenChange(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setShowDeleteConfirm(false);
       toast({
         title: "Erreur",
-        description: err?.message || "Impossible de supprimer le patient. Veuillez réessayer.",
+        description: err instanceof Error ? err.message : "Impossible de supprimer le patient. Veuillez réessayer.",
         variant: "destructive",
       });
     }
@@ -265,7 +264,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                         <Input
                           type="number"
                           {...field}
-                          value={field.value || ''}
+                          value={field.value ?? ""}
                           onChange={(e) => field.onChange(e.target.valueAsNumber || undefined)}
                           data-testid="input-edit-price"
                         />
@@ -299,7 +298,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                     <FormControl>
                       <Textarea
                         {...field}
-                        value={field.value || ''}
+                        value={field.value ?? ""}
                         placeholder="Ordonnance délivrée, suivi dans 2 semaines..."
                         className="resize-none h-20"
                         data-testid="input-edit-next-step"
@@ -316,7 +315,6 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                   variant="destructive"
                   size="icon"
                   onClick={handleDeleteClick}
-                  disabled={isDeleting || isUpdating}
                   data-testid="button-delete-patient"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -325,8 +323,8 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
                   <Button type="button" variant="outline" onClick={() => onOpenChange(false)} data-testid="button-edit-cancel">
                     Annuler
                   </Button>
-                  <Button type="submit" disabled={isUpdating || isDeleting} data-testid="button-edit-save">
-                    {isUpdating ? "Enregistrement..." : "Enregistrer"}
+                  <Button type="submit" data-testid="button-edit-save">
+                    Enregistrer
                   </Button>
                 </div>
               </div>
@@ -344,7 +342,7 @@ export function EditVisitDialog({ visit, open, onOpenChange }: EditVisitDialogPr
         cancelLabel="Annuler"
         onConfirm={handleDeleteConfirm}
         variant="destructive"
-        isLoading={isDeleting}
+        isLoading={false}
       />
     </>
   );

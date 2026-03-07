@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertVisitSchema } from "@shared/schema";
-import { useCreateVisit } from "@/hooks/use-visits";
+import { useMockVisits } from "@/context/MockVisitsContext";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,32 +33,37 @@ import { useState, useEffect } from "react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 
-// Helper schema for the form since some fields are auto-generated/defaults
-const formSchema = insertVisitSchema.pick({
-  patientName: true,
-  phoneNumber: true,
-  age: true,
-  mutuelle: true,
-  mutuelleRemplie: true,
-  condition: true,
-}).extend({
-  // Optional client-side only validations
-  patientName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  phoneNumber: z.string().regex(/^\d*$/, "Le numéro doit contenir uniquement des chiffres").optional(),
-  age: z.number({ invalid_type_error: "L'âge doit être un nombre" }).min(0, "L'âge ne peut pas être négatif").optional(),
-  condition: z.string().min(3, "Veuillez décrire la condition"),
-  mutuelle: z.enum(["Oui", "Non"]),
-  mutuelleRemplie: z.enum(["Oui", "Non"]),
-}).refine((data) => !(data.mutuelle === "Non" && data.mutuelleRemplie === "Oui"), {
-  message: "Si Mutuelle est 'Non', Mutuelle remplie doit être 'Non'",
-  path: ["mutuelleRemplie"],
-});
+const formSchema = insertVisitSchema
+  .pick({
+    patientName: true,
+    phoneNumber: true,
+    age: true,
+    mutuelle: true,
+    mutuelleRemplie: true,
+    condition: true,
+  })
+  .extend({
+    patientName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
+    phoneNumber: z.string().regex(/^\d*$/, "Le numéro doit contenir uniquement des chiffres").optional(),
+    age: z.number({ invalid_type_error: "L'âge doit être un nombre" }).min(0, "L'âge ne peut pas être négatif").optional(),
+    condition: z.string().min(3, "Veuillez décrire la condition"),
+    mutuelle: z.enum(["Oui", "Non"]),
+    mutuelleRemplie: z.enum(["Oui", "Non"]),
+  })
+  .refine((data) => !(data.mutuelle === "Non" && data.mutuelleRemplie === "Oui"), {
+    message: "Si Mutuelle est 'Non', Mutuelle remplie doit être 'Non'",
+    path: ["mutuelleRemplie"],
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
-export function AddPatientDialog() {
+interface AddPatientDialogProps {
+  selectedDate: string;
+}
+
+export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
   const [open, setOpen] = useState(false);
-  const { mutateAsync: createVisit, isPending } = useCreateVisit();
+  const { addVisit } = useMockVisits();
   const { toast } = useToast();
 
   const form = useForm<FormValues>({
@@ -73,7 +78,6 @@ export function AddPatientDialog() {
     },
   });
 
-  // Business rule: If mutuelle is Non, mutuelleRemplie must be Non
   const mutuelleValue = form.watch("mutuelle");
   const mutuelleRemplieValue = form.watch("mutuelleRemplie");
 
@@ -83,11 +87,19 @@ export function AddPatientDialog() {
     }
   }, [mutuelleValue, mutuelleRemplieValue, form]);
 
-  async function onSubmit(data: FormValues) {
+  function onSubmit(data: FormValues) {
     try {
-      await createVisit({
-        ...data,
+      addVisit(selectedDate, {
+        patientName: data.patientName,
+        phoneNumber: data.phoneNumber || null,
+        age: data.age ?? null,
+        mutuelle: data.mutuelle,
+        mutuelleRemplie: data.mutuelleRemplie,
+        condition: data.condition,
         status: "waiting",
+        price: null,
+        nextStep: null,
+        lastUpdatedBy: null,
       });
       toast({
         title: "Patient ajouté",
@@ -95,10 +107,10 @@ export function AddPatientDialog() {
       });
       setOpen(false);
       form.reset();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Erreur",
-        description: err?.message || "Impossible d'ajouter le patient. Veuillez réessayer.",
+        description: err instanceof Error ? err.message : "Impossible d'ajouter le patient. Veuillez réessayer.",
         variant: "destructive",
       });
     }
@@ -108,7 +120,7 @@ export function AddPatientDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="bg-primary hover:bg-blue-600 shadow-lg shadow-blue-500/20 text-white rounded-xl px-6">
-          <Plus className="w-5 h-5 mr-2" />
+          <Plus className="h-5 w-5 mr-2" />
           Ajouter un Patient
         </Button>
       </DialogTrigger>
@@ -155,10 +167,10 @@ export function AddPatientDialog() {
                   <FormItem>
                     <FormLabel>Âge</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="45" 
-                        {...field} 
+                      <Input
+                        type="number"
+                        placeholder="45"
+                        {...field}
                         onChange={(e) => field.onChange(e.target.value === "" ? undefined : parseInt(e.target.value))}
                         value={field.value ?? ""}
                       />
@@ -195,11 +207,7 @@ export function AddPatientDialog() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Mutuelle Remplie</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value}
-                    disabled={mutuelleValue === "Non"}
-                  >
+                  <Select onValueChange={field.onChange} value={field.value} disabled={mutuelleValue === "Non"}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner" />
@@ -228,8 +236,8 @@ export function AddPatientDialog() {
               )}
             />
             <div className="flex justify-end pt-2">
-              <Button type="submit" disabled={isPending} className="w-full">
-                {isPending ? "Ajout..." : "Ajouter à la file"}
+              <Button type="submit" className="w-full">
+                Ajouter à la file
               </Button>
             </div>
           </form>

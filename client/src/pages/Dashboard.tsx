@@ -1,25 +1,25 @@
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   LineChart,
   Line,
-  Legend
+  Legend,
 } from "recharts";
 import { Users, TrendingUp, Activity } from "lucide-react";
-import { useVisits } from "@/hooks/use-visits";
-import { useRealtime } from "@/hooks/use-realtime";
-import { useAnalytics } from "@/hooks/use-analytics";
+import { useMockVisits } from "@/context/MockVisitsContext";
 import { format, subDays, startOfMonth } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMemo, useState } from "react";
 
+const validStatuses = ["waiting", "in_consultation", "done"] as const;
+
 export default function Dashboard() {
-  useRealtime();
+  const { getVisitsForDate, getVisitsInRange } = useMockVisits();
   const [todayDate] = useState(() => new Date());
   const todayStr = format(todayDate, "yyyy-MM-dd");
   const monthStart = startOfMonth(todayDate);
@@ -27,62 +27,45 @@ export default function Dashboard() {
   const monthName = format(todayDate, "MMMM", { locale: fr });
   const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
-  const { data: currentMonthVisits } = useVisits({ 
-    startDate: monthStartStr,
-    endDate: todayStr 
-  } as any);
-
-  const { data: visitsToday } = useVisits({ date: todayStr });
+  const visitsToday = getVisitsForDate(todayStr);
+  const currentMonthVisits = getVisitsInRange(monthStartStr, todayStr);
 
   const patientsAujourdhui = useMemo(() => {
-    if (!visitsToday) return 0;
-    return visitsToday.filter(v => ["waiting", "in_consultation", "done"].includes(v.status)).length;
+    return visitsToday.filter((v) => validStatuses.includes(v.status as typeof validStatuses[number])).length;
   }, [visitsToday]);
 
   const statsMensuelles = useMemo(() => {
-    if (!currentMonthVisits) return { avgPatients: 0, avgPrice: 0 };
-
-    // Metric 1: Avg patients per day
-    const validStatuses = ["waiting", "in_consultation", "done"];
-    const monthPatients = currentMonthVisits.filter(v => validStatuses.includes(v.status));
+    const monthPatients = currentMonthVisits.filter((v) => validStatuses.includes(v.status as typeof validStatuses[number]));
     const dayOfMonth = todayDate.getDate();
-    const avgPatients = monthPatients.length / dayOfMonth;
+    const avgPatients = dayOfMonth > 0 ? monthPatients.length / dayOfMonth : 0;
 
-    // Metric 2: Avg price per consultation
-    const patientsWithPrice = currentMonthVisits.filter(v => v.price !== null && v.price !== undefined);
+    const patientsWithPrice = currentMonthVisits.filter((v) => v.price != null && v.price !== undefined);
     const totalPrice = patientsWithPrice.reduce((sum, v) => sum + (v.price || 0), 0);
     const avgPrice = patientsWithPrice.length > 0 ? totalPrice / patientsWithPrice.length : 0;
 
     return {
       avgPatients: avgPatients.toFixed(1),
-      avgPrice: Math.round(avgPrice)
+      avgPrice: Math.round(avgPrice),
     };
   }, [currentMonthVisits, todayDate]);
 
   const chartStartStr = format(subDays(todayDate, 6), "yyyy-MM-dd");
-  const { data: analytics } = useAnalytics({ 
-    startDate: chartStartStr, 
-    endDate: todayStr 
-  });
+  const rangeVisits = getVisitsInRange(chartStartStr, todayStr);
 
   const chartData = useMemo(() => {
-    const days = [];
+    const days: { day: string; total: number; mutuelle: number; mutuelleRemplie: number }[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = subDays(todayDate, i);
       const dateStr = format(d, "yyyy-MM-dd");
       const dayLabel = format(d, "dd MMM", { locale: fr });
-      
-      const stat = analytics?.patientsPerDay?.find(p => p.date === dateStr);
-      
-      days.push({
-        day: dayLabel,
-        total: stat?.total ?? 0,
-        mutuelle: stat?.mutuelle ?? 0,
-        mutuelleRemplie: stat?.mutuelleRemplie ?? 0
-      });
+      const dayVisits = rangeVisits.filter((v) => v.visitDate === dateStr && validStatuses.includes(v.status as typeof validStatuses[number]));
+      const total = dayVisits.length;
+      const mutuelle = dayVisits.filter((v) => v.mutuelle === "Oui").length;
+      const mutuelleRemplie = dayVisits.filter((v) => v.mutuelle === "Oui" && v.mutuelleRemplie === "Oui").length;
+      days.push({ day: dayLabel, total, mutuelle, mutuelleRemplie });
     }
     return days;
-  }, [analytics, todayDate]);
+  }, [rangeVisits, todayDate]);
 
   return (
     <Layout>
@@ -123,9 +106,7 @@ export default function Dashboard() {
               <TrendingUp className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-slate-900">
-                {statsMensuelles.avgPrice} MAD
-              </div>
+              <div className="text-2xl font-bold text-slate-900">{statsMensuelles.avgPrice} MAD</div>
             </CardContent>
           </Card>
         </div>
@@ -140,38 +121,34 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis 
-                      dataKey="day" 
-                      stroke="#94a3b8"
-                      fontSize={12}
-                    />
+                    <XAxis dataKey="day" stroke="#94a3b8" fontSize={12} />
                     <YAxis stroke="#94a3b8" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                    <Tooltip
+                      contentStyle={{ backgroundColor: "white", borderRadius: "8px", border: "1px solid #e2e8f0" }}
                     />
-                    <Legend verticalAlign="top" height={36}/>
-                    <Line 
-                      type="monotone" 
-                      dataKey="total" 
+                    <Legend verticalAlign="top" height={36} />
+                    <Line
+                      type="monotone"
+                      dataKey="total"
                       name="Total Patients"
-                      stroke="#3b82f6" 
+                      stroke="#3b82f6"
                       strokeWidth={3}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="mutuelle" 
+                    <Line
+                      type="monotone"
+                      dataKey="mutuelle"
                       name="Mutuelle = Oui"
-                      stroke="#10b981" 
+                      stroke="#10b981"
                       strokeWidth={2}
                       strokeDasharray="5 5"
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="mutuelleRemplie" 
+                    <Line
+                      type="monotone"
+                      dataKey="mutuelleRemplie"
                       name="Mutuelle Remplie = Oui"
-                      stroke="#f59e0b" 
+                      stroke="#f59e0b"
                       strokeWidth={2}
                       strokeDasharray="3 3"
                     />

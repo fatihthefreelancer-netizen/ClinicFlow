@@ -1,9 +1,6 @@
 import { pgTable, text, serial, integer, timestamp, date, uuid } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { users } from "./models/auth";
-
-export * from "./models/auth";
 
 export const profiles = pgTable("profiles", {
   id: serial("id").primaryKey(),
