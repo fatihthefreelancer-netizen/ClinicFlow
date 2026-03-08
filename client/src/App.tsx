@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { MockVisitsProvider } from "@/context/MockVisitsContext";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
+import { Analytics } from "@vercel/analytics/react";
 import NotFound from "@/pages/not-found";
 import LiveBoard from "@/pages/LiveBoard";
 import Dashboard from "@/pages/Dashboard";
@@ -55,6 +56,7 @@ function App() {
         <MockVisitsProvider>
           <Toaster />
           <Router />
+          <Analytics />
         </MockVisitsProvider>
       </TooltipProvider>
     </QueryClientProvider>
