@@ -21,14 +21,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const navItems = [
     {
       href: "/",
-      label: "Tableau de Bord",
-      icon: Activity,
+      label: "Patients",
+      icon: LayoutDashboard,
       active: location === "/",
     },
     {
       href: "/dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
+      label: "Activité",
+      icon: Activity,
       active: location === "/dashboard",
     },
     {

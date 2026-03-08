@@ -53,17 +53,24 @@ export default function LiveBoard() {
   const handleExportExcel = () => {
     if (filteredVisits.length === 0) return;
 
+    const statusLabels: Record<string, string> = {
+      waiting: "En attente",
+      in_consultation: "En consultation",
+      done: "Terminé",
+      left: "Parti",
+    };
+
     const data = filteredVisits.map((v) => ({
-      Arrivée: v.arrivalTime ? format(new Date(v.arrivalTime), "HH:mm") : "--:--",
+      "Arrivée": v.arrivalTime ? format(new Date(v.arrivalTime), "HH:mm") : "--:--",
       "Nom du patient": v.patientName,
+      "Numéro de téléphone": v.phoneNumber ?? "",
       "Âge": v.age ?? "",
-      Condition: v.condition,
-      Statut: v.status,
-      Mutuelle: v.mutuelle,
+      "Condition": v.condition,
+      "Statut": statusLabels[v.status] ?? v.status,
+      "Mutuelle": v.mutuelle,
       "Mutuelle Remplie": v.mutuelleRemplie,
-      "Prix (MAD)": v.price ?? "",
+      "Prix": v.price != null ? `${v.price} Dhs` : "",
       "Étape Suivante": v.nextStep ?? "",
-      Date: selectedDate,
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(data);
@@ -80,7 +87,7 @@ export default function LiveBoard() {
             <h1 className="text-3xl font-bold text-slate-900">Tableau des Patients</h1>
             <p className="text-slate-500 mt-1 flex items-center gap-2">
               <span className="inline-block w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-              Données Supabase
+              Mises à jour en temps réel activées
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3 items-center">
@@ -189,12 +196,12 @@ export default function LiveBoard() {
                       <TableCell className="font-mono text-slate-500">
                         {visit.arrivalTime
                           ? (() => {
-                              try {
-                                return format(new Date(visit.arrivalTime), "HH:mm");
-                              } catch {
-                                return "--:--";
-                              }
-                            })()
+                            try {
+                              return format(new Date(visit.arrivalTime), "HH:mm");
+                            } catch {
+                              return "--:--";
+                            }
+                          })()
                           : "--:--"}
                       </TableCell>
                       <TableCell className="font-medium text-slate-900">{visit.patientName}</TableCell>

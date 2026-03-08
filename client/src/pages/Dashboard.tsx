@@ -47,8 +47,8 @@ export default function Dashboard() {
 
   const statsMensuelles = useMemo(() => {
     const monthPatients = currentMonthVisits.filter((v) => validStatuses.includes(v.status as typeof validStatuses[number]));
-    const dayOfMonth = todayDate.getDate();
-    const avgPatients = dayOfMonth > 0 ? monthPatients.length / dayOfMonth : 0;
+    const workedDays = new Set(monthPatients.map((v) => v.visitDate)).size;
+    const avgPatients = workedDays > 0 ? monthPatients.length / workedDays : 0;
 
     const patientsWithPrice = currentMonthVisits.filter((v) => v.price != null && v.price !== undefined);
     const totalPrice = patientsWithPrice.reduce((sum, v) => sum + (v.price || 0), 0);

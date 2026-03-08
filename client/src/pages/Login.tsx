@@ -135,6 +135,7 @@ export default function Login() {
                 )}
               </Button>
 
+              {/* Hidden for now - signup and forgot password links
               <div className="flex items-center justify-between text-sm">
                 <Link href="/forgot-password" className="text-primary hover:underline" data-testid="link-forgot-password">
                   Mot de passe oublié ?
@@ -143,6 +144,7 @@ export default function Login() {
                   Créer un compte
                 </Link>
               </div>
+              */}
             </form>
           </CardContent>
         </Card>
