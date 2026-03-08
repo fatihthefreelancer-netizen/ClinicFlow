@@ -205,8 +205,8 @@ export default function LiveBoard() {
                           : "--:--"}
                       </TableCell>
                       <TableCell className="font-medium text-slate-900">{visit.patientName}</TableCell>
-                      <TableCell className="text-slate-600">{visit.phoneNumber ?? ""}</TableCell>
-                      <TableCell className="text-slate-600">{visit.age ?? ""}</TableCell>
+                      <TableCell className="text-slate-600">{visit.phoneNumber || "-"}</TableCell>
+                      <TableCell className="text-slate-600">{visit.age ?? "-"}</TableCell>
                       <TableCell className="text-slate-600 max-w-[200px] truncate" title={visit.condition}>
                         {visit.condition}
                       </TableCell>
@@ -216,9 +216,9 @@ export default function LiveBoard() {
                       <TableCell className="text-slate-600">{visit.mutuelle}</TableCell>
                       <TableCell className="text-slate-600">{visit.mutuelleRemplie}</TableCell>
                       <TableCell className="text-right font-mono text-slate-600">
-                        {visit.price != null ? `${visit.price} Dhs` : ""}
+                        {visit.price != null ? `${visit.price} Dhs` : "-"}
                       </TableCell>
-                      <TableCell className="text-slate-500 max-w-[200px] truncate">{visit.nextStep ?? ""}</TableCell>
+                      <TableCell className="text-slate-500 max-w-[200px] truncate">{visit.nextStep || "-"}</TableCell>
                     </TableRow>
                   ))
                 )}
