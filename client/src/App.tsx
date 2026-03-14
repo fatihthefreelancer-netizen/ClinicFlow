@@ -15,6 +15,8 @@ import SignUp from "@/pages/SignUp";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
 import VerifyEmail from "@/pages/VerifyEmail";
+import { SpeedInsights } from "@vercel/speed-insights/react";
+
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -55,7 +57,9 @@ function App() {
         <MockVisitsProvider>
           <Toaster />
           <Router />
+          <SpeedInsights />
         </MockVisitsProvider>
+
       </TooltipProvider>
     </QueryClientProvider>
   );
