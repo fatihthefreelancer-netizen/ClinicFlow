@@ -2,6 +2,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertVisitSchema } from "@shared/schema";
 import { useMockVisits } from "@/context/MockVisitsContext";
+import { searchPatientsByName, VisitDTO } from "@/services/visitsService";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,8 +29,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Plus, Search, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 
@@ -64,6 +65,14 @@ interface AddPatientDialogProps {
 export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Autocomplete states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [suggestions, setSuggestions] = useState<VisitDTO[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
   const { addVisit } = useMockVisits();
   const { toast } = useToast();
 
@@ -87,6 +96,53 @@ export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
       form.setValue("mutuelleRemplie", "Non");
     }
   }, [mutuelleValue, mutuelleRemplieValue, form]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (searchQuery.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    
+    const handler = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await searchPatientsByName(searchQuery);
+        setSuggestions(results);
+        if (results.length > 0) {
+          setShowSuggestions(true);
+        }
+      } catch (err) {
+        console.error("Search failed", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  const handleSelectSuggestion = (patient: VisitDTO) => {
+    form.setValue("patientName", patient.patientName);
+    if (patient.phoneNumber) form.setValue("phoneNumber", patient.phoneNumber);
+    if (patient.age) form.setValue("age", patient.age);
+    if (patient.mutuelle === "Oui" || patient.mutuelle === "Non") form.setValue("mutuelle", patient.mutuelle as "Oui" | "Non");
+    if (patient.mutuelleRemplie === "Oui" || patient.mutuelleRemplie === "Non") form.setValue("mutuelleRemplie", patient.mutuelleRemplie as "Oui" | "Non");
+    if (patient.condition) form.setValue("condition", patient.condition);
+    
+    setSearchQuery(patient.patientName);
+    setShowSuggestions(false);
+  };
 
   async function onSubmit(data: FormValues) {
     console.log("========== ADD PATIENT BUTTON CLICKED ==========");
@@ -149,7 +205,42 @@ export function AddPatientDialog({ selectedDate }: AddPatientDialogProps) {
                 <FormItem>
                   <FormLabel>Nom du Patient</FormLabel>
                   <FormControl>
-                    <Input placeholder="Jean Dupont" {...field} />
+                    <div className="relative" ref={wrapperRef}>
+                      <Input
+                        placeholder="Jean Dupont"
+                        {...field}
+                        onChange={(e) => {
+                          field.onChange(e);
+                          setSearchQuery(e.target.value);
+                          if (!showSuggestions && e.target.value.length >= 2) {
+                            setShowSuggestions(true);
+                          }
+                        }}
+                      />
+                      {isSearching && (
+                        <div className="absolute right-3 top-2.5 text-slate-400">
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        </div>
+                      )}
+                      
+                      {showSuggestions && suggestions.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white rounded-md shadow-lg border border-slate-200 overflow-hidden text-sm">
+                          {suggestions.map((sugg) => (
+                            <div
+                              key={sugg.id}
+                              className="px-4 py-2 hover:bg-slate-100 cursor-pointer flex flex-col transition-colors border-b last:border-b-0 border-slate-100"
+                              onClick={() => handleSelectSuggestion(sugg)}
+                            >
+                              <span className="font-medium text-slate-900">{sugg.patientName}</span>
+                              <span className="text-xs text-slate-500">
+                                {sugg.phoneNumber ? `${sugg.phoneNumber} • ` : ""}
+                                {sugg.condition}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

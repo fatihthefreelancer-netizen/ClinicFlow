@@ -318,3 +318,44 @@ export async function deleteVisit(id: number): Promise<void> {
   console.log("DELETE SUCCESS");
   console.log("========== END QUERY: deleteVisit ==========");
 }
+
+/** Search patients by name for auto-complete (returns unique recent patients) */
+export async function searchPatientsByName(query: string): Promise<VisitDTO[]> {
+  console.log("========== QUERY: searchPatientsByName ==========");
+  console.log("QUERY START");
+  console.log("FILTERS:", { query: `%${query}%` });
+
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+  if (sessionError || !session?.user?.id) {
+    console.error("AUTHENTICATION CHECK FAILED in searchPatientsByName");
+    throw new Error("Non authentifié");
+  }
+
+  const { data, error } = await supabase
+    .from("visits")
+    .select("*")
+    .ilike("patient_name", `%${query}%`)
+    .eq("uid", session.user.id)
+    .order("arrival_time", { ascending: false })
+    .limit(10);
+
+  if (error) {
+    console.error("ERROR in searchPatientsByName:", error?.message);
+    throw error;
+  }
+  
+  // Return the MOST RECENT record per patient (avoid duplicates)
+  const uniquePatients = new Map<string, VisitRow>();
+  if (data) {
+    for (const row of data as VisitRow[]) {
+      const lowerName = row.patient_name.toLowerCase();
+      if (!uniquePatients.has(lowerName)) {
+        uniquePatients.set(lowerName, row);
+      }
+    }
+  }
+
+  console.log("========== END QUERY: searchPatientsByName ==========");
+  return Array.from(uniquePatients.values()).map(rowToDTO);
+}

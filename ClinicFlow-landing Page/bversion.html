@@ -162,8 +162,7 @@
       -------------------------------------------------- */
     .header {
       position: sticky;
-      top: 1rem;
-      /* Floats below the top edge */
+      top: 1rem; /* Floats below the top edge */
       z-index: 100;
       max-width: 1100px;
       margin: 1rem auto;
@@ -172,7 +171,7 @@
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.06), 0 0 4px rgba(0, 0, 0, 0.02);
+      box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.06), 0 0 4px rgba(0,0,0,0.02);
       transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
       color: var(--foreground);
     }
@@ -183,27 +182,12 @@
       border-color: rgba(255, 255, 255, 0.1);
       box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.2);
     }
-
-    .header.navbar-dark .logo-text {
-      color: white;
-    }
-
-    .header.navbar-dark .nav-link {
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .header.navbar-dark .nav-link:hover {
-      color: white;
-    }
-
-    .header.navbar-dark .btn-ghost {
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .header.navbar-dark .btn-ghost:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-    }
+    
+    .header.navbar-dark .logo-text { color: white; }
+    .header.navbar-dark .nav-link { color: rgba(255, 255, 255, 0.7); }
+    .header.navbar-dark .nav-link:hover { color: white; }
+    .header.navbar-dark .btn-ghost { color: rgba(255, 255, 255, 0.8); }
+    .header.navbar-dark .btn-ghost:hover { background: rgba(255, 255, 255, 0.1); color: white; }
 
     .header-inner {
       display: grid;
@@ -259,7 +243,7 @@
       justify-content: flex-end;
       gap: 0.5rem;
     }
-
+    
     .header .btn {
       padding: 0.5rem 1rem;
       font-size: 0.85rem;
@@ -717,8 +701,7 @@
     .features-list {
       display: flex;
       flex-direction: column;
-      padding-bottom: 28rem;
-      /* Creates required scroll track for the right-side sticky image */
+      padding-bottom: 28rem; /* Creates required scroll track for the right-side sticky image */
     }
 
     .feature-item {
@@ -1493,7 +1476,7 @@
         <img src="favicon.png" alt="ClinicFlow Logo" class="logo-img" />
         <span class="logo-text">ClinicFlow</span>
       </a>
-
+      
       <!-- Nav Links -->
       <nav class="header-center">
         <a href="#fonctionnalites" class="nav-link">Fonctionnalités</a>
@@ -1948,21 +1931,21 @@
     (function () {
       const navbar = document.getElementById('navbar');
       const darkSections = document.querySelectorAll('.features-section, .philosophy-section, .sales-cta, .footer');
-
+      
       function checkNavbarTheme() {
         if (!navbar) return;
         const navRect = navbar.getBoundingClientRect();
         // Calculate the vertical center of the navbar
         const navCenterY = navRect.top + navRect.height / 2;
         let isDark = false;
-
-        darkSections.forEach(function (sec) {
+        
+        darkSections.forEach(function(sec) {
           const rect = sec.getBoundingClientRect();
           if (navCenterY >= rect.top && navCenterY <= rect.bottom) {
             isDark = true;
           }
         });
-
+        
         if (isDark) {
           navbar.classList.add('navbar-dark');
         } else {

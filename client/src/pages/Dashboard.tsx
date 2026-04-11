@@ -1,4 +1,5 @@
 import { Layout } from "@/components/Layout";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   XAxis,
@@ -10,9 +11,9 @@ import {
   Line,
   Legend,
 } from "recharts";
-import { Users, TrendingUp, Activity } from "lucide-react";
+import { Users, TrendingUp, Activity, FileCheck2 } from "lucide-react";
 import { useMockVisits } from "@/context/MockVisitsContext";
-import { format, subDays, startOfMonth } from "date-fns";
+import { format, subDays, startOfMonth, startOfYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMemo, useState, useEffect } from "react";
 
@@ -30,20 +31,29 @@ export default function Dashboard() {
 
   const chartStartStr = format(subDays(todayDate, 6), "yyyy-MM-dd");
 
+  const [customStartDate, setCustomStartDate] = useState(() => format(startOfYear(new Date()), "yyyy-MM-dd"));
+  const [customEndDate, setCustomEndDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
+
   useEffect(() => {
     console.log("Dashboard: FETCH DATA START");
     console.log("Dashboard: loading today:", todayStr, "month start:", monthStartStr, "chart start:", chartStartStr);
     loadVisitsForDate(todayStr);
     loadVisitsInRange(monthStartStr, todayStr);
     loadVisitsInRange(chartStartStr, todayStr);
-  }, [todayStr, monthStartStr, chartStartStr, loadVisitsForDate, loadVisitsInRange]);
+    loadVisitsInRange(customStartDate, customEndDate);
+  }, [todayStr, monthStartStr, chartStartStr, customStartDate, customEndDate, loadVisitsForDate, loadVisitsInRange]);
 
   const visitsToday = getVisitsForDate(todayStr);
   const currentMonthVisits = getVisitsInRange(monthStartStr, todayStr);
+  const customRangeVisits = getVisitsInRange(customStartDate, customEndDate);
 
   const patientsAujourdhui = useMemo(() => {
     return visitsToday.filter((v) => validStatuses.includes(v.status as typeof validStatuses[number])).length;
   }, [visitsToday]);
+
+  const mutuelleRemplieCount = useMemo(() => {
+    return customRangeVisits.filter((v) => v.mutuelleRemplie === "Oui").length;
+  }, [customRangeVisits]);
 
   const statsMensuelles = useMemo(() => {
     const monthPatients = currentMonthVisits.filter((v) => validStatuses.includes(v.status as typeof validStatuses[number]));
@@ -85,8 +95,8 @@ export default function Dashboard() {
           <p className="text-slate-500 mt-1">Aperçu des performances</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="bg-white border-slate-200 shadow-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="bg-white border-slate-200 shadow-sm flex flex-col justify-between">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
               <CardTitle className="text-sm font-medium text-slate-500">Nombre de patients aujourd'hui</CardTitle>
               <Activity className="h-4 w-4 text-green-500" />
@@ -96,7 +106,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="bg-white border-slate-200 shadow-sm flex flex-col justify-between">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
               <CardTitle className="text-sm font-medium text-slate-500">
                 Moyenne de patients par jour – {capitalizedMonth}
@@ -108,7 +118,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm">
+          <Card className="bg-white border-slate-200 shadow-sm flex flex-col justify-between">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
               <CardTitle className="text-sm font-medium text-slate-500">
                 Prix moyen par consultation – {capitalizedMonth}
@@ -117,6 +127,35 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-slate-900">{statsMensuelles.avgPrice} MAD</div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white border-slate-200 shadow-sm flex flex-col justify-between">
+            <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 gap-1">
+              <div className="w-full">
+                <CardTitle className="text-sm font-medium text-slate-500">
+                  Mutuelle Remplie
+                </CardTitle>
+                <div className="flex gap-2 mt-3 items-center w-full">
+                  <Input 
+                    type="date" 
+                    value={customStartDate} 
+                    onChange={(e) => setCustomStartDate(e.target.value)} 
+                    className="h-8 text-xs p-1 px-2" 
+                  />
+                  <span className="text-xs text-slate-400">à</span>
+                  <Input 
+                    type="date" 
+                    value={customEndDate} 
+                    onChange={(e) => setCustomEndDate(e.target.value)} 
+                    className="h-8 text-xs p-1 px-2" 
+                  />
+                </div>
+              </div>
+              <FileCheck2 className="h-4 w-4 text-orange-500 flex-shrink-0" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-slate-900 mt-2">{mutuelleRemplieCount}</div>
             </CardContent>
           </Card>
         </div>
