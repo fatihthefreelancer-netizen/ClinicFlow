@@ -148,6 +148,32 @@ export async function getVisitsInRange(startDate: string, endDate: string): Prom
   return (data ?? []).map(rowToDTO);
 }
 
+/**
+ * Count visits with mutuelle_remplie = "Oui" in a date range (inclusive, by arrival_time).
+ * Counted by the database instead of from fetched rows: Supabase caps how many rows a select
+ * returns (1000 by default), so counting fetched rows silently stops growing on long ranges.
+ */
+export async function countMutuelleRemplieInRange(startDate: string, endDate: string): Promise<number> {
+  console.log("========== QUERY: countMutuelleRemplieInRange ==========");
+  console.log("FILTERS:", { startDate, endDate, gte: startOfDay(startDate), lte: endOfDay(endDate) });
+
+  const { count, error, status } = await supabase
+    .from("visits")
+    .select("*", { count: "exact", head: true })
+    .eq("mutuelle_remplie", "Oui")
+    .gte("arrival_time", startOfDay(startDate))
+    .lte("arrival_time", endOfDay(endDate));
+
+  console.log("QUERY RESULT COUNT:", count);
+  if (error) {
+    // A head request has no response body, so the HTTP status is the only error detail.
+    console.error("ERROR in countMutuelleRemplieInRange: HTTP", status, error?.message);
+    throw error;
+  }
+  console.log("========== END QUERY: countMutuelleRemplieInRange ==========");
+  return count ?? 0;
+}
+
 /** Insert payload (camelCase) — uid set from session; arrival_time set to current time. */
 export type CreateVisitInput = {
   patientName: string;

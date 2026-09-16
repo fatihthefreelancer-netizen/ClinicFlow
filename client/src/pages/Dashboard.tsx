@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { Users, TrendingUp, Activity, FileCheck2 } from "lucide-react";
 import { useMockVisits } from "@/context/MockVisitsContext";
+import { countMutuelleRemplieInRange } from "@/services/visitsService";
 import { format, subDays, startOfMonth, startOfYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMemo, useState, useEffect } from "react";
@@ -21,7 +22,7 @@ const validStatuses = ["waiting", "in_consultation", "done"] as const;
 
 export default function Dashboard() {
   console.log("========== PAGE LOADED: Dashboard ==========");
-  const { getVisitsForDate, getVisitsInRange, loadVisitsForDate, loadVisitsInRange, getAllVisits } = useMockVisits();
+  const { getVisitsForDate, getVisitsInRange, loadVisitsForDate, loadVisitsInRange } = useMockVisits();
   const [todayDate] = useState(() => new Date());
   const todayStr = format(todayDate, "yyyy-MM-dd");
   const monthStart = startOfMonth(todayDate);
@@ -40,23 +41,31 @@ export default function Dashboard() {
     loadVisitsForDate(todayStr);
     loadVisitsInRange(monthStartStr, todayStr);
     loadVisitsInRange(chartStartStr, todayStr);
-    loadVisitsInRange(customStartDate, customEndDate);
-  }, [todayStr, monthStartStr, chartStartStr, customStartDate, customEndDate, loadVisitsForDate, loadVisitsInRange]);
+  }, [todayStr, monthStartStr, chartStartStr, loadVisitsForDate, loadVisitsInRange]);
+
+  // Counted by the database: loading the whole range to count it is capped at 1000 rows by Supabase.
+  // null = loading or failed (shown as "-").
+  const [mutuelleRemplieCount, setMutuelleRemplieCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setMutuelleRemplieCount(null);
+    countMutuelleRemplieInRange(customStartDate, customEndDate)
+      .then((count) => {
+        if (!cancelled) setMutuelleRemplieCount(count);
+      })
+      .catch((err) => console.error("Dashboard: mutuelle remplie count ERROR:", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [customStartDate, customEndDate]);
 
   const visitsToday = getVisitsForDate(todayStr);
   const currentMonthVisits = getVisitsInRange(monthStartStr, todayStr);
-  const customRangeVisits = getVisitsInRange(customStartDate, customEndDate);
 
   const patientsAujourdhui = useMemo(() => {
     return visitsToday.filter((v) => validStatuses.includes(v.status as typeof validStatuses[number])).length;
   }, [visitsToday]);
-
-  // Compute Mutuelle Remplie count across all cached visits (updated after additions)
-  const mutuelleRemplieCount = useMemo(() => {
-    const allVisits = getAllVisits();
-    return allVisits.filter((v) => v.mutuelleRemplie === "Oui").length;
-    return customRangeVisits.filter((v) => v.mutuelleRemplie === "Oui").length;
-  }, [customRangeVisits]);
 
   const statsMensuelles = useMemo(() => {
     const monthPatients = currentMonthVisits.filter((v) => validStatuses.includes(v.status as typeof validStatuses[number]));
@@ -157,7 +166,7 @@ export default function Dashboard() {
                 <FileCheck2 className="h-4 w-4 text-orange-500" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-slate-900">{mutuelleRemplieCount}</div>
+                <div className="text-2xl font-bold text-slate-900">{mutuelleRemplieCount ?? "-"}</div>
               </CardContent>
             </Card>
           </div>
