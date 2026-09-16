@@ -21,7 +21,7 @@ const validStatuses = ["waiting", "in_consultation", "done"] as const;
 
 export default function Dashboard() {
   console.log("========== PAGE LOADED: Dashboard ==========");
-  const { getVisitsForDate, getVisitsInRange, loadVisitsForDate, loadVisitsInRange } = useMockVisits();
+  const { getVisitsForDate, getVisitsInRange, loadVisitsForDate, loadVisitsInRange, getAllVisits } = useMockVisits();
   const [todayDate] = useState(() => new Date());
   const todayStr = format(todayDate, "yyyy-MM-dd");
   const monthStart = startOfMonth(todayDate);
@@ -51,7 +51,10 @@ export default function Dashboard() {
     return visitsToday.filter((v) => validStatuses.includes(v.status as typeof validStatuses[number])).length;
   }, [visitsToday]);
 
+  // Compute Mutuelle Remplie count across all cached visits (updated after additions)
   const mutuelleRemplieCount = useMemo(() => {
+    const allVisits = getAllVisits();
+    return allVisits.filter((v) => v.mutuelleRemplie === "Oui").length;
     return customRangeVisits.filter((v) => v.mutuelleRemplie === "Oui").length;
   }, [customRangeVisits]);
 
@@ -130,32 +133,34 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-slate-200 shadow-sm flex flex-col justify-between">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
-              <CardTitle className="text-sm font-medium text-slate-500">
-                Mutuelle Remplie
-              </CardTitle>
-              <FileCheck2 className="h-4 w-4 text-orange-500 flex-shrink-0" />
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <div className="text-2xl font-bold text-slate-900">{mutuelleRemplieCount}</div>
-              <div className="flex flex-col 2xl:flex-row items-center gap-2 w-full max-w-full">
-                <Input 
-                  type="date" 
-                  value={customStartDate} 
-                  onChange={(e) => setCustomStartDate(e.target.value)} 
-                  className="h-8 text-xs px-2 w-full flex-1" 
-                />
-                <span className="text-xs text-slate-400 hidden 2xl:block">à</span>
-                <Input 
-                  type="date" 
-                  value={customEndDate} 
-                  onChange={(e) => setCustomEndDate(e.target.value)} 
-                  className="h-8 text-xs px-2 w-full flex-1" 
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2 items-center w-full">
+              <Input 
+                type="date" 
+                value={customStartDate} 
+                onChange={(e) => setCustomStartDate(e.target.value)} 
+                className="h-8 text-xs p-1 px-2 flex-1" 
+              />
+              <span className="text-xs text-slate-400">à</span>
+              <Input 
+                type="date" 
+                value={customEndDate} 
+                onChange={(e) => setCustomEndDate(e.target.value)} 
+                className="h-8 text-xs p-1 px-2 flex-1" 
+              />
+            </div>
+            <Card className="bg-white border-slate-200 shadow-sm flex flex-col justify-between flex-1">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 gap-1">
+                <CardTitle className="text-sm font-medium text-slate-500">
+                  Mutuelle Remplie
+                </CardTitle>
+                <FileCheck2 className="h-4 w-4 text-orange-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-slate-900">{mutuelleRemplieCount}</div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6">
