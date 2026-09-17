@@ -174,6 +174,40 @@ export async function countMutuelleRemplieInRange(startDate: string, endDate: st
   return count ?? 0;
 }
 
+let visitChangesChannelCount = 0;
+
+/**
+ * Calls onChange when a visit is added, edited or deleted, on this device or any other
+ * (Supabase Realtime: needs Realtime enabled for the visits table). Changes that arrive close
+ * together trigger a single call. Returns a function that stops listening.
+ */
+export function subscribeToVisitChanges(onChange: () => void): () => void {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const notify = () => {
+    clearTimeout(timer);
+    timer = setTimeout(onChange, 300);
+  };
+
+  let wasSubscribed = false;
+  // Unique channel name: supabase.channel() returns any existing channel with the same name (even one
+  // still closing after the page was left), and listeners added to that channel never fire.
+  const channel = supabase
+    .channel(`visits-changes-${++visitChangesChannelCount}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "visits" }, notify)
+    .subscribe((status, err) => {
+      console.log("REALTIME visits subscription:", status, err?.message ?? "");
+      if (status !== "SUBSCRIBED") return;
+      // Subscribed again after a lost connection: changes made in the meantime were missed, so reload.
+      if (wasSubscribed) notify();
+      wasSubscribed = true;
+    });
+
+  return () => {
+    clearTimeout(timer);
+    supabase.removeChannel(channel);
+  };
+}
+
 /** Insert payload (camelCase) — uid set from session; arrival_time set to current time. */
 export type CreateVisitInput = {
   patientName: string;

@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { Users, TrendingUp, Activity, FileCheck2 } from "lucide-react";
 import { useMockVisits } from "@/context/MockVisitsContext";
-import { countMutuelleRemplieInRange } from "@/services/visitsService";
+import { countMutuelleRemplieInRange, subscribeToVisitChanges } from "@/services/visitsService";
 import { format, subDays, startOfMonth, startOfYear } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useMemo, useState, useEffect } from "react";
@@ -35,13 +35,21 @@ export default function Dashboard() {
   const [customStartDate, setCustomStartDate] = useState(() => format(startOfYear(new Date()), "yyyy-MM-dd"));
   const [customEndDate, setCustomEndDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
+  // Goes up each time a visit is added, edited or deleted (on any device), which reloads the stats below.
+  const [visitsVersion, setVisitsVersion] = useState(0);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToVisitChanges(() => setVisitsVersion((v) => v + 1));
+    return unsubscribe;
+  }, []);
+
   useEffect(() => {
     console.log("Dashboard: FETCH DATA START");
     console.log("Dashboard: loading today:", todayStr, "month start:", monthStartStr, "chart start:", chartStartStr);
     loadVisitsForDate(todayStr);
     loadVisitsInRange(monthStartStr, todayStr);
     loadVisitsInRange(chartStartStr, todayStr);
-  }, [todayStr, monthStartStr, chartStartStr, loadVisitsForDate, loadVisitsInRange]);
+  }, [todayStr, monthStartStr, chartStartStr, loadVisitsForDate, loadVisitsInRange, visitsVersion]);
 
   // Counted by the database: loading the whole range to count it is capped at 1000 rows by Supabase.
   // null = loading or failed (shown as "-").
@@ -49,16 +57,19 @@ export default function Dashboard() {
 
   useEffect(() => {
     let cancelled = false;
-    setMutuelleRemplieCount(null);
+    // The previous number stays on screen while reloading, so live updates don't flash "-".
     countMutuelleRemplieInRange(customStartDate, customEndDate)
       .then((count) => {
         if (!cancelled) setMutuelleRemplieCount(count);
       })
-      .catch((err) => console.error("Dashboard: mutuelle remplie count ERROR:", err));
+      .catch((err) => {
+        console.error("Dashboard: mutuelle remplie count ERROR:", err);
+        if (!cancelled) setMutuelleRemplieCount(null);
+      });
     return () => {
       cancelled = true;
     };
-  }, [customStartDate, customEndDate]);
+  }, [customStartDate, customEndDate, visitsVersion]);
 
   const visitsToday = getVisitsForDate(todayStr);
   const currentMonthVisits = getVisitsInRange(monthStartStr, todayStr);
